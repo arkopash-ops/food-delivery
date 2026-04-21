@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import restaurantRoutes from "./routes/restaurant.routes.js";
 
 import { logger } from "./middleware/logger.middleware.js";
 import { errorLogger } from "./middleware/error.middleware.js";
@@ -25,6 +26,7 @@ app.get("/", async (req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/restaurant", restaurantRoutes);
 
 app.use(errorLogger);
 

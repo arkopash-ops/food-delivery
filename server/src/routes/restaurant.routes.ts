@@ -26,4 +26,11 @@ router.patch(
     restaurantController._updateRestaurantIsOpen
 );
 
+// public route, all menuItems, by restaurentId
+router.get(
+    "/:id/menu",
+    protect,
+    restaurantController._getRestaurantWithMenu
+);
+
 export default router;

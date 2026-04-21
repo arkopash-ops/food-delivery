@@ -1,3 +1,4 @@
+// models/menuItem.models.ts
 import mongoose, { Schema, Model, Types } from "mongoose";
 import type { Document } from "mongoose";
 import type { IItems } from "../types/menuItem.types.js";

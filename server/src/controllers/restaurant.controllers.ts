@@ -96,3 +96,28 @@ export const _updateRestaurantIsOpen = async (
     next(error);
   }
 };
+
+// MenuItems by Restaurent
+export const _getRestaurantWithMenu = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ success: false, message: "Invalid or missing id." });
+    }
+
+    const data = await restaurantService.getRestaurantWithMenu(id);
+
+    res.status(200).json({
+      success: true,
+      restaurant: data.restaurant,
+      items: data.items,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

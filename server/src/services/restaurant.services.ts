@@ -1,6 +1,7 @@
 import type { Types } from "mongoose";
 import RestaurantModel from "../models/restaurant.models.js";
 import type { IRestaurant } from "../types/restaurant.types.js";
+import MenuItemModel from "../models/menuItem.models.js";
 
 export const createRestaurant = async (
     managerId: Types.ObjectId,
@@ -74,4 +75,21 @@ export const updateRestaurantIsOpen = async (
     }
 
     return restaurant;
+};
+
+
+// MenuItems by Restaurent
+export const getRestaurantWithMenu = async (restaurantId: string) => {
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+        const err = new Error("Restaurant not found") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    const items = await MenuItemModel.find({
+        restaurantId: restaurant._id
+    }).populate("category");
+
+    return { restaurant, items };
 };

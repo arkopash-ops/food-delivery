@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import menuItemRoutes from "./routes/menu.routes.js";
 
 import { logger } from "./middleware/logger.middleware.js";
 import { errorLogger } from "./middleware/error.middleware.js";
@@ -29,6 +30,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/menu/items", menuItemRoutes);
 
 app.use(errorLogger);
 

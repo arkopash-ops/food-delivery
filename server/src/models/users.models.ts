@@ -30,20 +30,25 @@ const UserSchema = new Schema<UserDocument>({
     role: {
         type: String,
         enum: ["customer", "restaurant_manager", "driver"],
-        required: true
+        required: true,
     },
 
     phone: {
         type: String,
+        required: true,
         unique: true,
         trim: true,
         match: [/^\d{10}$/, "Please use a valid mobile number"],
+        default: null,
     },
-    
-    defaultAddress: AddressSchema,
+
+    defaultAddress: {
+        type: AddressSchema,
+        default: null,
+    },
 }, { timestamps: true });
 
-UserSchema.index({ defaultAddress: "2dsphere" });
+UserSchema.index({ "defaultAddress.location": "2dsphere" });
 
 const UserModel: Model<UserDocument> = mongoose.model<UserDocument>('User', UserSchema);
 export default UserModel;

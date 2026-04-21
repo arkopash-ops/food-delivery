@@ -3,7 +3,7 @@ export interface ILocation {
     coordinates: [number, number];   // [lng, lat]
 }
 
-export interface IDefaultAddress {
+export interface IAddress {
     address: string;
     city: string;
     pincode: string;

@@ -6,6 +6,7 @@ import CustomerDashboard from "../pages/Users/Customer/CustomerDashboard";
 import DriverDashboard from "../pages/Users/Driver/DriverDashboard";
 import ManagerDashboard from "../pages/Users/Managers/ManagerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
+import Restaurant from "../pages/Users/Managers/Resaturant";
 
 const AppRouter = () => {
   return (
@@ -24,6 +25,23 @@ const AppRouter = () => {
             }
           />
           <Route
+            path="/manager/restaurant"
+            element={
+              <ProtectedRoute role="restaurant_manager">
+                <Restaurant />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manager/restaurant/:id"
+            element={
+              <ProtectedRoute role="restaurant_manager">
+                <Restaurant />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/customer/dashboard"
             element={
               <ProtectedRoute role="customer">
@@ -31,6 +49,7 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/driver/dashboard"
             element={

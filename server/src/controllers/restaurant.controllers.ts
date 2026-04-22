@@ -7,6 +7,33 @@ interface AuthUser {
   role: string;
 }
 
+// get restaurant by manager
+export const _getMyRestaurant = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user as AuthUser;
+
+    const restaurant = await restaurantService.getMyRestaurant(user._id);
+
+    if (!restaurant) {
+      return res.status(200).json({
+        success: true,
+        restaurant: null,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // create restaurant controller
 export const _createRestaurant = async (
   req: Request,

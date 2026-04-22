@@ -5,6 +5,13 @@ import { requireRole } from "../middleware/role.middleware.js";
 
 const router = Router();
 
+router.get(
+    "/me",
+    protect,
+    requireRole("restaurant_manager"),
+    restaurantController._getMyRestaurant
+);
+
 router.post(
     "/",
     protect,

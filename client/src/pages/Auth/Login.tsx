@@ -28,9 +28,27 @@ const Login = () => {
       }
 
       if (data.success) {
+        const user = data.user;
+
+        if (!user?.role) {
+          alert("Login response is missing user role");
+          return;
+        }
+
         localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("role", user.role);
+
         window.dispatchEvent(new Event("authChanged"));
-        navigate("/user/dashboard");
+
+        if (user.role === "restaurant_manager") {
+          navigate("/manager/dashboard");
+        } else if (user.role === "customer") {
+          navigate("/customer/dashboard");
+        } else if (user.role === "driver") {
+          navigate("/driver/dashboard");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -75,7 +93,9 @@ const Login = () => {
             {loading ? "Logging..." : "Login"}
           </button>
 
-          <p className="mt-3 text-center">Don't have an Account? <a href="/register">Register</a></p>
+          <p className="mt-3 text-center">
+            Don't have an Account? <a href="/register">Register</a>
+          </p>
         </form>
       </div>
     </div>

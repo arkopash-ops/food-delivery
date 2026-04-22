@@ -41,7 +41,7 @@ const Register: React.FC = () => {
       if (data.success) {
         localStorage.setItem("isAuthenticated", "true");
         window.dispatchEvent(new Event("authChanged"));
-        navigate("/user/dashboard");
+        navigate("/");
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -124,6 +124,10 @@ const Register: React.FC = () => {
           <button className="btn btn-success w-100" disabled={loading}>
             {loading ? "Registering..." : "Register"}
           </button>
+
+          <p className="mt-3 text-center">
+            Already have an Account? <a href="/">Log in</a>
+          </p>
         </form>
       </div>
     </div>

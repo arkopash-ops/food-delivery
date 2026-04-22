@@ -2,6 +2,7 @@ import { Router } from "express";
 import { protect } from "../middleware/auth.middleware.js";
 import * as restaurantController from "../controllers/restaurant.controllers.js"
 import { requireRole } from "../middleware/role.middleware.js";
+import { upload } from "../middleware/upload.js";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.post(
     "/",
     protect,
     requireRole("restaurant_manager"),
+    upload.single("image"),
     restaurantController._createRestaurant
 );
 
@@ -23,6 +25,7 @@ router.patch(
     "/:id",
     protect,
     requireRole("restaurant_manager"),
+    upload.single("image"),
     restaurantController._updateRestaurant
 );
 

@@ -9,14 +9,15 @@ export const getMyRestaurant = async (managerId: Types.ObjectId) => {
     return restaurant;
 };
 
+
 export const createRestaurant = async (
     managerId: Types.ObjectId,
     data: Partial<Omit<IRestaurant, "managerId">>
 ) => {
-    const { name, address, isOpen, avgPrepTimeMinutes, rejectionRate } = data;
+    const { name, address, isOpen,image, avgPrepTimeMinutes, rejectionRate } = data;
 
-    if (!name || !address) {
-        const err = new Error("Name and address are required") as any;
+    if (!name || !address || !image) {
+        const err = new Error("Name, address and image are required") as any;
         err.statusCode = 400;
         throw err;
     }
@@ -26,6 +27,7 @@ export const createRestaurant = async (
         address,
         managerId,
         isOpen: isOpen ?? true,
+        image,
         avgPrepTimeMinutes: avgPrepTimeMinutes ?? 0,
         rejectionRate: rejectionRate ?? 0,
     });
@@ -45,11 +47,12 @@ export const updateRestaurant = async (
     if (data.name !== undefined) update.name = data.name;
     if (data.address !== undefined) update.address = data.address;
     if (data.isOpen !== undefined) update.isOpen = data.isOpen;
+    if (data.image !== undefined) update.image = data.image;
 
     const restaurant = await RestaurantModel.findOneAndUpdate(
         { _id: restaurantId, managerId },
         { $set: update },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!restaurant) {

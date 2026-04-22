@@ -6,6 +6,7 @@ export interface IRestaurant {
     managerId: Types.ObjectId;
     address: IAddress;
     isOpen: boolean;
+    image: string;
     avgPrepTimeMinutes?: number;
     rejectionRate?: number;
 }

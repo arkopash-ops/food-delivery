@@ -19,6 +19,7 @@ interface Restaurant {
   name: string;
   address: Address;
   isOpen: boolean;
+  image: string;
   avgPrepTimeMinutes?: number;
   rejectionRate?: number;
 }
@@ -137,7 +138,19 @@ const ManagerDashboard = () => {
     <div className="container mt-4">
       <h3>Manager Dashboard</h3>
 
-      <div className="card mt-3">
+      <div className="card mt-3" style={{width: "20rem"}}>
+        {restaurant.image && (
+          <img
+            src={restaurant.image}
+            alt={restaurant.name}
+            style={{
+              maxHeight: "200px",
+              width: "100%",
+              objectFit: "contain",
+            }}
+          />
+        )}
+
         <div className="card-body">
           <h4 className="card-title">{restaurant.name}</h4>
           <p className="card-text mb-1">

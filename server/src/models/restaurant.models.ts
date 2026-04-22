@@ -54,6 +54,12 @@ const RestaurantSchema = new Schema<RestaurantDocument>(
             default: true,
         },
 
+        image: {
+            type: String,
+            required: false,
+            trim: true,
+        },
+
         avgPrepTimeMinutes: {
             type: Number,
             default: 0,

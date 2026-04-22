@@ -46,6 +46,7 @@ const Restaurant = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [isOpen, setIsOpen] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
@@ -53,6 +54,12 @@ const Restaurant = () => {
 
   const latNum = parseFloat(latitude) || 0;
   const lngNum = parseFloat(longitude) || 0;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
 
   // fetch restaurant for edit
   useEffect(() => {
@@ -81,7 +88,6 @@ const Restaurant = () => {
         setLongitude(coords[0]?.toString() ?? "0");
         setLatitude(coords[1]?.toString() ?? "0");
         setIsOpen(Boolean(r.isOpen));
-
       } catch (err) {
         console.error(err);
         alert("Something went wrong while loading restaurant");
@@ -99,20 +105,25 @@ const Restaurant = () => {
     setLoading(true);
 
     try {
-      const body = {
-        name,
-        address: {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append(
+        "address",
+        JSON.stringify({
           address: addressLine,
           city,
           pincode,
           location: {
             type: "Point",
-            // backend expects [lng, lat]
-            coordinates: [lngNum, latNum] as [number, number],
+            coordinates: [lngNum, latNum], // [lng, lat]
           },
-        },
-        isOpen,
-      };
+        }),
+      );
+      formData.append("isOpen", String(isOpen));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
 
       const url = isEditMode
         ? `http://localhost:8080/api/restaurant/${id}`
@@ -122,9 +133,8 @@ const Restaurant = () => {
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(body),
+        body: formData,
       });
 
       const data = await res.json();
@@ -138,7 +148,6 @@ const Restaurant = () => {
         );
         console.log(res.ok);
         console.log(data);
-        
         return;
       }
 
@@ -280,6 +289,19 @@ const Restaurant = () => {
           <label htmlFor="isOpen" className="form-check-label">
             Is Open
           </label>
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Restaurant Image</label>
+          <input
+            type="file"
+            className="form-control"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+          <small className="text-muted">
+            Optional. Upload restaurant logo or photo.
+          </small>
         </div>
 
         <button className="btn btn-primary" disabled={loading}>

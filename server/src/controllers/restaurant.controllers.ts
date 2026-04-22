@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { Types } from "mongoose";
 import * as restaurantService from "../services/restaurant.services.js";
+import { uploadCloudinary } from "../middleware/uploadCloudinary.middleware.js";
 
 interface AuthUser {
   _id: Types.ObjectId;
@@ -34,6 +35,7 @@ export const _getMyRestaurant = async (
   }
 };
 
+
 // create restaurant controller
 export const _createRestaurant = async (
   req: Request,
@@ -43,10 +45,25 @@ export const _createRestaurant = async (
   try {
     const user = req.user as AuthUser;
 
-    const restaurant = await restaurantService.createRestaurant(
-      user._id,
-      req.body
-    );
+    let imageUrl: string | undefined;
+    if (req.file && req.file.buffer) {
+      const result = await uploadCloudinary(
+        req.file.buffer,
+        "restaurants"
+      );
+      imageUrl = result.secure_url;
+    }
+
+    let address = req.body.address;
+    if (typeof address === "string") {
+      address = JSON.parse(address);
+    }
+
+    const restaurant = await restaurantService.createRestaurant(user._id, {
+      ...req.body,
+      address,
+      image: imageUrl,
+    });
 
     res.status(201).json({
       success: true,
@@ -56,7 +73,6 @@ export const _createRestaurant = async (
     next(error);
   }
 };
-
 
 // update restaurant controller
 export const _updateRestaurant = async (
@@ -69,13 +85,35 @@ export const _updateRestaurant = async (
     const { id } = req.params;
 
     if (!id || Array.isArray(id)) {
-      return res.status(400).json({ success: false, message: "Invalid or missing id." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or missing id." });
     }
+
+    let imageUrl: string | undefined;
+    if (req.file && req.file.buffer) {
+      const result = await uploadCloudinary(
+        req.file.buffer,
+        "restaurants"
+      );
+      imageUrl = result.secure_url;
+    }
+
+    let address = req.body.address;
+    if (typeof address === "string") {
+      address = JSON.parse(address);
+    }
+
+    const updateData = {
+      ...req.body,
+      address,
+      ...(imageUrl ? { image: imageUrl } : {}),
+    };
 
     const restaurant = await restaurantService.updateRestaurant(
       user._id,
       id,
-      req.body
+      updateData
     );
 
     res.status(200).json({

@@ -3,6 +3,12 @@ import RestaurantModel from "../models/restaurant.models.js";
 import type { IRestaurant } from "../types/restaurant.types.js";
 import MenuItemModel from "../models/menuItem.models.js";
 
+// list of restaurant
+export const listRestaurants = async () => {
+    const restaurants = await RestaurantModel.find();
+    return restaurants;
+};
+
 // get restaurant by manager
 export const getMyRestaurant = async (managerId: Types.ObjectId) => {
     const restaurant = await RestaurantModel.findOne({ managerId });

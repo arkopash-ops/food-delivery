@@ -8,6 +8,24 @@ interface AuthUser {
   role: string;
 }
 
+// list of restaurant
+export const _listRestaurants = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const restaurants = await restaurantService.listRestaurants();
+
+    res.status(200).json({
+      success: true,
+      restaurants,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // get restaurant by manager
 export const _getMyRestaurant = async (
   req: Request,

@@ -7,6 +7,12 @@ import { upload } from "../middleware/upload.js";
 const router = Router();
 
 router.get(
+    "/",
+    protect,
+    restaurantController._listRestaurants
+);
+
+router.get(
     "/me",
     protect,
     requireRole("restaurant_manager"),

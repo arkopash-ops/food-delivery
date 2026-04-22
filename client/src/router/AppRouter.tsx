@@ -2,11 +2,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../components/Layout";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
-import CustomerDashboard from "../pages/Users/Customer/CustomerDashboard";
+import CustomerHome from "../pages/Users/Customer/CustomerHome";
 import DriverDashboard from "../pages/Users/Driver/DriverDashboard";
 import ManagerDashboard from "../pages/Users/Managers/ManagerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Restaurant from "../pages/Users/Managers/Resaturant";
+import Category from "../pages/Users/Managers/Category";
+import MenuItem from "../pages/Users/Managers/MenuItem";
 
 const AppRouter = () => {
   return (
@@ -40,12 +42,28 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/manager/menu-item"
+            element={
+              <ProtectedRoute role="restaurant_manager">
+                <MenuItem />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manager/categories"
+            element={
+              <ProtectedRoute role="restaurant_manager">
+                <Category />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/customer/dashboard"
             element={
               <ProtectedRoute role="customer">
-                <CustomerDashboard />
+                <CustomerHome />
               </ProtectedRoute>
             }
           />

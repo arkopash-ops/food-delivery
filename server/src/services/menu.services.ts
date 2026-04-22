@@ -8,7 +8,7 @@ export const createMenuItem = async (
     managerId: Types.ObjectId,
     data: Omit<IItems, "restaurantId">
 ) => {
-    const { name, description, price, category, isAvailable } = data;
+    const { name, image, description, price, category, isAvailable } = data;
 
     if (!name || price == null || !category) {
         const err = new Error("Name, price, and category are required") as any;
@@ -27,6 +27,7 @@ export const createMenuItem = async (
     const itemData: Partial<IItems> & { restaurantId: Types.ObjectId; name: string; price: number; category: Types.ObjectId } = {
         restaurantId: restaurant._id,
         name,
+        image,
         price,
         category,
         isAvailable: isAvailable ?? true,
@@ -57,6 +58,7 @@ export const updateMenuItem = async (
 
     const update: Partial<IItems> = {};
     if (data.name !== undefined) update.name = data.name;
+    if (data.image !== undefined) update.image = data.image;
     if (data.description !== undefined) update.description = data.description;
     if (data.price !== undefined) update.price = data.price;
     if (data.category !== undefined) update.category = data.category;
@@ -65,7 +67,7 @@ export const updateMenuItem = async (
     const item = await MenuItemModel.findOneAndUpdate(
         { _id: itemId, restaurantId: restaurant._id },
         { $set: update },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!item) {

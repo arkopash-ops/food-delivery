@@ -72,6 +72,22 @@ const Navbar = () => {
                           Dashboard
                         </a>
                       </li>
+                      <li className="nav-item">
+                        <a
+                          className="nav-link"
+                          onClick={() => navigate("/manager/menu-item")}
+                        >
+                          Add MenuItem
+                        </a>
+                      </li>
+                      <li className="nav-item">
+                        <a
+                          className="nav-link"
+                          onClick={() => navigate("/manager/categories")}
+                        >
+                          Add category
+                        </a>
+                      </li>
                     </>
                   )}
 

@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import type { Document, Model } from "mongoose";
 import type { IUser } from "../types/users.types.js";
-import { AddressSchema } from "./address.models.js";
 
 export interface UserDocument extends IUser, Document { }
 
@@ -41,14 +40,7 @@ const UserSchema = new Schema<UserDocument>({
         match: [/^\d{10}$/, "Please use a valid mobile number"],
         default: null,
     },
-
-    defaultAddress: {
-        type: AddressSchema,
-        default: null,
-    },
 }, { timestamps: true });
-
-UserSchema.index({ "defaultAddress.location": "2dsphere" });
 
 const UserModel: Model<UserDocument> = mongoose.model<UserDocument>('User', UserSchema);
 export default UserModel;

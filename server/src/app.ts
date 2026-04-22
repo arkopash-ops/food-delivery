@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import addressRoutes from "./routes/address.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import menuItemRoutes from "./routes/menu.routes.js";
@@ -32,6 +33,7 @@ app.get("/", async (req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/address", addressRoutes);
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/menu/items", menuItemRoutes);

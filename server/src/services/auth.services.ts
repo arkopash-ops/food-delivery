@@ -20,7 +20,7 @@ export interface LoginUser {
 export const register = async (
     userData: IUser
 ): Promise<{ user: RegisterUser; token: string }> => {
-    const { name, email, password, role, phone, defaultAddress } = userData;
+    const { name, email, password, role, phone } = userData;
 
     if (!password) {
         const err = new Error("Password is required");
@@ -52,7 +52,6 @@ export const register = async (
             password: hashedPassword,
             role,
             phone,
-            ...(defaultAddress && { defaultAddress }),
         });
     } else if (role === "driver") {
         newUser = await UserModel.create({

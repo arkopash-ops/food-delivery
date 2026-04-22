@@ -1,32 +1,38 @@
-import { Schema } from "mongoose";
-import type { IAddress } from "../types/address.types.js";
+import mongoose, { Schema, Document, Types } from "mongoose";
+import type { IAddress, ILocation } from "../types/address.types.js";
 
-export const AddressSchema = new Schema<IAddress>({
-    address: {
+export interface CustomerAddressDocument extends IAddress, Document { }
+
+const LocationSchema = new Schema<ILocation>({
+    type: {
         type: String,
-        trim: true,
+        enum: ["Point"],
+        required: true,
     },
-
-    city: {
-        type: String,
-        trim: true,
+    coordinates: {
+        type: [Number],
+        required: true,
     },
+});
 
-    pincode: {
-        type: String,
-        trim: true,
-        match: [/^\d{6}$/, "Please use a valid mobile number"],
-    },
-
-    location: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            required: true,
-        },
-        coordinates: {
-            type: [Number],
+const AddressSchema = new Schema<CustomerAddressDocument>(
+    {
+        userId: {
+            type: Types.ObjectId,
+            ref: "User",
             required: true
         },
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        pincode: { type: String, required: true },
+        location: { type: LocationSchema, required: true },
     },
-}, { _id: false });
+    { timestamps: true }
+);
+
+AddressSchema.index({ location: "2dsphere" });
+
+const AddressModel =
+    mongoose.model<CustomerAddressDocument>("Address", AddressSchema);
+
+export default AddressModel;

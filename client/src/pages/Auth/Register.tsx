@@ -2,12 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Register: React.FC = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "customer",
+  });
 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,14 +27,14 @@ const Register: React.FC = () => {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(form),
         credentials: "include",
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Error: ${data.message || "Registration failed"}`);
+        alert(data.message || "Registration failed");
         return;
       }
 
@@ -50,13 +60,14 @@ const Register: React.FC = () => {
         <h3 className="text-center mb-3">Register</h3>
 
         <form onSubmit={handleRegister}>
-            <div className="mb-3">
+          <div className="mb-3">
             <input
               className="form-control"
+              name="name"
               type="text"
               placeholder="Name"
-              value={email}
-              onChange={(e) => setName(e.target.value)}
+              value={form.name}
+              onChange={handleChange}
               required
             />
           </div>
@@ -64,10 +75,11 @@ const Register: React.FC = () => {
           <div className="mb-3">
             <input
               className="form-control"
+              name="email"
               type="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -75,12 +87,38 @@ const Register: React.FC = () => {
           <div className="mb-3">
             <input
               className="form-control"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="phone"
+              type="text"
+              placeholder="Phone"
+              value={form.phone}
+              onChange={handleChange}
               required
             />
+          </div>
+
+          <div className="mb-3">
+            <input
+              className="form-control"
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <select
+              className="form-control"
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+            >
+              <option value="customer">Customer</option>
+              <option value="restaurant_manager">Restaurant Manager</option>
+              <option value="driver">Driver</option>
+            </select>
           </div>
 
           <button className="btn btn-success w-100" disabled={loading}>

@@ -1,7 +1,6 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 import type { Document } from "mongoose";
 import type { IRestaurant } from "../types/restaurant.types.js";
-import { AddressSchema } from "./address.models.js";
 
 export interface RestaurantDocument extends IRestaurant, Document { }
 
@@ -20,8 +19,33 @@ const RestaurantSchema = new Schema<RestaurantDocument>(
         },
 
         address: {
-            type: AddressSchema,
-            required: true,
+            address: {
+                type: String,
+                trim: true,
+            },
+
+            city: {
+                type: String,
+                trim: true,
+            },
+
+            pincode: {
+                type: String,
+                trim: true,
+                match: [/^\d{6}$/, "Please use a valid pin"],
+            },
+
+            location: {
+                type: {
+                    type: String,
+                    enum: ['Point'],
+                    required: true,
+                },
+                coordinates: {
+                    type: [Number],
+                    required: true
+                },
+            },
         },
 
         isOpen: {

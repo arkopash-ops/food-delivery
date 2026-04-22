@@ -101,6 +101,14 @@ const Navbar = () => {
                           Dashboard
                         </a>
                       </li>
+                      <li className="nav-item">
+                        <a
+                          className="nav-link"
+                          onClick={() => navigate("/customer/address")}
+                        >
+                          Address
+                        </a>
+                      </li>
                     </>
                   )}
 

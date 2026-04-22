@@ -1,39 +1,7 @@
 // src/pages/manager/RestaurantForm.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// default marker icon
-const defaultIcon = new L.Icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = defaultIcon;
-
-interface LocationPickerProps {
-  setLatitude: (lat: string) => void;
-  setLongitude: (lng: string) => void;
-}
-
-const LocationPicker = ({ setLatitude, setLongitude }: LocationPickerProps) => {
-  useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      setLatitude(lat.toString());
-      setLongitude(lng.toString());
-    },
-  });
-  return null;
-};
+import LocationMap from "../../../components/LocationMap";
 
 const Restaurant = () => {
   const { id } = useParams<{ id: string }>();
@@ -222,35 +190,12 @@ const Restaurant = () => {
         {/* Map + coordinates */}
         <div className="mb-3">
           <label className="form-label d-block">Select Location on Map</label>
-          <MapContainer
-            center={[latNum, lngNum]}
-            zoom={13}
-            scrollWheelZoom={true}
-            style={{ height: "300px", width: "100%" }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            <LocationPicker
-              setLatitude={setLatitude}
-              setLongitude={setLongitude}
-            />
-
-            <Marker
-              position={[latNum, lngNum]}
-              draggable={true}
-              eventHandlers={{
-                dragend: (e) => {
-                  const marker = e.target as L.Marker;
-                  const pos = marker.getLatLng();
-                  setLatitude(pos.lat.toString());
-                  setLongitude(pos.lng.toString());
-                },
-              }}
-            />
-          </MapContainer>
+          <LocationMap
+            latitude={latitude}
+            longitude={longitude}
+            setLatitude={setLatitude}
+            setLongitude={setLongitude}
+          />
           <small className="text-muted">
             Click on the map or drag the marker to set restaurant location.
           </small>

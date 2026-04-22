@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import CustomerHome from "../pages/Users/Customer/CustomerHome";
+import Address from "../pages/Users/Customer/Address";
 import DriverDashboard from "../pages/Users/Driver/DriverDashboard";
 import ManagerDashboard from "../pages/Users/Managers/ManagerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -18,6 +19,7 @@ const AppRouter = () => {
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
+          {/* restaurant_manager */}
           <Route
             path="/manager/dashboard"
             element={
@@ -59,6 +61,7 @@ const AppRouter = () => {
             }
           />
 
+          {/* customer */}
           <Route
             path="/customer/dashboard"
             element={
@@ -67,7 +70,16 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/customer/address"
+            element={
+              <ProtectedRoute role="customer">
+                <Address />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* driver */}
           <Route
             path="/driver/dashboard"
             element={

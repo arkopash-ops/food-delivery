@@ -16,9 +16,6 @@ interface MenuItem {
   isAvailable: boolean;
 }
 
-const MENU_API = "http://localhost:8080/api/menu/items";
-const CATEGORY_API = "http://localhost:8080/api/category";
-
 const MenuItemPage = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -47,7 +44,7 @@ const MenuItemPage = () => {
   };
 
   const fetchCategories = async () => {
-    const res = await fetch(CATEGORY_API);
+    const res = await fetch("http://localhost:8080/api/category");
     const data = await res.json();
     setCategories(data.categories || []);
   };
@@ -57,7 +54,7 @@ const MenuItemPage = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${MENU_API}/my`, {
+      const res = await fetch(`http://localhost:8080/api/menu/items/my`, {
         credentials: "include",
       });
 

@@ -26,6 +26,14 @@ const Address = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [errors, setErrors] = useState<{
+    address?: string;
+    city?: string;
+    pincode?: string;
+    latitude?: string;
+    longitude?: string;
+  }>({});
+
   const resetForm = () => {
     setAddressLine("");
     setCity("");
@@ -33,6 +41,7 @@ const Address = () => {
     setLatitude("");
     setLongitude("");
     setEditingId(null);
+    setErrors({});
   };
 
   const fetchAddresses = async () => {
@@ -65,21 +74,44 @@ const Address = () => {
     })();
   }, []);
 
+  const validateForm = () => {
+    const newErrors: {
+      address?: string;
+      city?: string;
+      pincode?: string;
+      latitude?: string;
+      longitude?: string;
+    } = {};
+
+    if (!addressLine.trim()) newErrors.address = "Address is required";
+    if (!city.trim()) newErrors.city = "City is required";
+    if (!pincode.trim()) {
+      newErrors.pincode = "Pincode is required";
+    } else if (pincode.length == 6) {
+      newErrors.pincode = "Pincode must be 6 chars";
+    }
+
+    if (!latitude.trim()) {
+      newErrors.latitude = "Latitude is required";
+    } else if (isNaN(Number(latitude))) {
+      newErrors.latitude = "Latitude must be a number";
+    }
+
+    if (!longitude.trim()) {
+      newErrors.longitude = "Longitude is required";
+    } else if (isNaN(Number(longitude))) {
+      newErrors.longitude = "Longitude must be a number";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!addressLine.trim() || !city.trim() || !pincode.trim()) {
-      alert("Address, city, and pincode are required");
-      return;
-    }
-
-    const lat = Number(latitude);
-    const lng = Number(longitude);
-
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      alert("Latitude and longitude must be valid numbers");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setSubmitting(true);
@@ -91,21 +123,23 @@ const Address = () => {
         pincode: pincode.trim(),
         location: {
           type: "Point" as const,
-          coordinates: [lng, lat] as [number, number],
+          coordinates: [Number(longitude), Number(latitude)] as [
+            number,
+            number,
+          ],
         },
       };
 
       const url = editingId
         ? `http://localhost:8080/api/address/${editingId}`
         : "http://localhost:8080/api/address";
+
       const method = editingId ? "PATCH" : "POST";
 
       const res = await fetch(url, {
         method,
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -162,9 +196,7 @@ const Address = () => {
 
       setAddresses((prev) => prev.filter((item) => item._id !== id));
 
-      if (editingId === id) {
-        resetForm();
-      }
+      if (editingId === id) resetForm();
     } catch (err) {
       console.error(err);
       alert("Something went wrong while deleting the address");
@@ -184,49 +216,63 @@ const Address = () => {
               </h5>
 
               <form onSubmit={handleSubmit}>
+                {/* Address */}
                 <div className="mb-3">
                   <label className="form-label">Address Line</label>
                   <input
-                    className="form-control"
+                    className={`form-control ${errors.address ? "is-invalid" : ""}`}
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
                     disabled={submitting}
                   />
+                  {errors.address && (
+                    <small className="text-danger">{errors.address}</small>
+                  )}
                 </div>
 
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">City</label>
                     <input
-                      className="form-control"
+                      className={`form-control ${errors.city ? "is-invalid" : ""}`}
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       disabled={submitting}
                     />
+                    {errors.city && (
+                      <small className="text-danger">{errors.city}</small>
+                    )}
                   </div>
 
                   <div className="col-md-6">
                     <label className="form-label">Pincode</label>
                     <input
-                      className="form-control"
+                      className={`form-control ${errors.pincode ? "is-invalid" : ""}`}
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       disabled={submitting}
                     />
+                    {errors.pincode && (
+                      <small className="text-danger">{errors.pincode}</small>
+                    )}
                   </div>
                 </div>
 
+                {/* Lat + Lng */}
                 <div className="row g-3 mt-1">
                   <div className="col-md-6">
                     <label className="form-label">Latitude</label>
                     <input
                       type="number"
                       step="any"
-                      className="form-control"
+                      className={`form-control ${errors.latitude ? "is-invalid" : ""}`}
                       value={latitude}
                       onChange={(e) => setLatitude(e.target.value)}
                       disabled={submitting}
                     />
+                    {errors.latitude && (
+                      <small className="text-danger">{errors.latitude}</small>
+                    )}
                   </div>
 
                   <div className="col-md-6">
@@ -234,27 +280,29 @@ const Address = () => {
                     <input
                       type="number"
                       step="any"
-                      className="form-control"
+                      className={`form-control ${errors.longitude ? "is-invalid" : ""}`}
                       value={longitude}
                       onChange={(e) => setLongitude(e.target.value)}
                       disabled={submitting}
                     />
+                    {errors.longitude && (
+                      <small className="text-danger">{errors.longitude}</small>
+                    )}
                   </div>
                 </div>
 
+                {/* Map */}
                 <div className="mb-3 mt-3">
                   <label className="form-label d-block">
                     Select Location on Map
                   </label>
+
                   <LocationMap
                     latitude={latitude}
                     longitude={longitude}
                     setLatitude={setLatitude}
                     setLongitude={setLongitude}
                   />
-                  <small className="text-muted">
-                    Click on the map or drag the marker to set address location.
-                  </small>
                 </div>
 
                 <div className="d-flex gap-2 mt-3">
@@ -286,6 +334,7 @@ const Address = () => {
           </div>
         </div>
 
+        {/* RIGHT SIDE (UNCHANGED LOGIC) */}
         <div className="col-12 col-lg-7">
           <div className="card">
             <div className="card-body">
@@ -304,12 +353,15 @@ const Address = () => {
                       <div className="card h-100 border">
                         <div className="card-body">
                           <h6 className="card-title mb-2">{item.address}</h6>
+
                           <p className="mb-1">
                             <strong>City:</strong> {item.city}
                           </p>
+
                           <p className="mb-1">
                             <strong>Pincode:</strong> {item.pincode}
                           </p>
+
                           <p className="mb-3">
                             <strong>Coordinates:</strong>{" "}
                             {item.location.coordinates[1]},{" "}
@@ -323,6 +375,7 @@ const Address = () => {
                             >
                               Edit
                             </button>
+
                             <button
                               className="btn btn-sm btn-outline-danger"
                               onClick={() => handleDelete(item._id)}

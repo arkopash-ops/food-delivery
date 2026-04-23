@@ -6,10 +6,41 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
+
   const navigate = useNavigate();
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const newErrors: { email?: string; password?: string } = {};
+
+    // email validation
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    // password validation
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     setLoading(true);
 
     try {
@@ -43,7 +74,7 @@ const Login = () => {
         if (user.role === "restaurant_manager") {
           navigate("/manager/dashboard");
         } else if (user.role === "customer") {
-          navigate("/customer/dashboard");
+          navigate("/customer/home");
         } else if (user.role === "driver") {
           navigate("/driver/dashboard");
         } else {
@@ -69,24 +100,28 @@ const Login = () => {
         <form onSubmit={handleLogin}>
           <div className="mb-3">
             <input
-              className="form-control"
-              type="email"
+              className={`form-control ${errors.email ? "is-invalid" : ""}`}
+              type="text"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
+            {errors.email && (
+              <small className="text-danger">{errors.email}</small>
+            )}
           </div>
 
           <div className="mb-3">
             <input
-              className="form-control"
+              className={`form-control ${errors.password ? "is-invalid" : ""}`}
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
+            {errors.password && (
+              <small className="text-danger">{errors.password}</small>
+            )}
           </div>
 
           <button className="btn btn-primary w-100" disabled={loading}>

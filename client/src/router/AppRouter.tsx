@@ -4,6 +4,7 @@ import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import CustomerHome from "../pages/Users/Customer/CustomerHome";
 import Address from "../pages/Users/Customer/Address";
+import Orders from "../pages/Users/Customer/Orders";
 import DriverDashboard from "../pages/Users/Driver/DriverDashboard";
 import ManagerDashboard from "../pages/Users/Managers/ManagerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -70,6 +71,14 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
+            <Route
+              path="/customer/orders"
+              element={
+                <ProtectedRoute role="customer">
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
           <Route
             path="/customer/address"
             element={

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 interface Location {
   type: "Point";
@@ -6,6 +7,7 @@ interface Location {
 }
 
 interface Address {
+  _id: string;
   address: string;
   city: string;
   pincode: string;
@@ -41,6 +43,12 @@ const CustomerHome = () => {
   const [loading, setLoading] = useState(true);
 
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +125,91 @@ const CustomerHome = () => {
     0,
   );
   const total = subtotal;
+
+  const fetchAddresses = async () => {
+    try {
+      setLoadingAddresses(true);
+      setOrderError(null);
+
+      const res = await fetch("http://localhost:8080/api/address", {
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to load addresses");
+      }
+
+      const savedAddresses = data.addresses || [];
+      setAddresses(savedAddresses);
+
+      if (savedAddresses.length > 0) {
+        setSelectedAddressId((prev) => prev || savedAddresses[0]._id);
+      } else {
+        setSelectedAddressId("");
+      }
+    } catch (error) {
+      console.error(error);
+      setOrderError("Could not load your saved addresses.");
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const openAddressSelection = async () => {
+    setOrderMessage(null);
+    await fetchAddresses();
+  };
+
+  const placeOrder = async () => {
+    if (cart.length === 0) {
+      setOrderError("Your cart is empty.");
+      return;
+    }
+
+    if (!selectedAddressId) {
+      setOrderError("Please select a delivery address.");
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      setOrderError(null);
+      setOrderMessage(null);
+
+      const res = await fetch("http://localhost:8080/api/orders", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deliveryAddressId: selectedAddressId,
+          items: cart.map((item) => ({
+            menuItemId: item._id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to place order");
+      }
+
+      setCart([]);
+      setOrderMessage("Order placed successfully.");
+      setSelectedAddressId("");
+    } catch (error) {
+      console.error(error);
+      setOrderError(
+        error instanceof Error ? error.message : "Failed to place order.",
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   if (loading) return <p className="p-4">Loading...</p>;
 
@@ -277,13 +370,101 @@ const CustomerHome = () => {
                 <span>Rs. {total}</span>
               </div>
 
-              <button className="btn btn-success w-100 mt-3">
-                Place Order
+              {orderMessage && (
+                <div className="alert alert-success mt-3 mb-0" role="alert">
+                  {orderMessage}
+                </div>
+              )}
+
+              {orderError && (
+                <div className="alert alert-danger mt-3 mb-0" role="alert">
+                  {orderError}
+                </div>
+              )}
+
+              <div className="card mt-3">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6 className="mb-0">Delivery Address</h6>
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={openAddressSelection}
+                      disabled={loadingAddresses || placingOrder}
+                    >
+                      {loadingAddresses ? "Loading..." : "Select Address"}
+                    </button>
+                  </div>
+
+                  {addresses.length > 0 ? (
+                    <div className="d-grid gap-2">
+                      {addresses.map((item) => (
+                        <label
+                          key={item._id}
+                          className={`border rounded p-2 ${
+                            selectedAddressId === item._id
+                              ? "border-primary bg-light"
+                              : ""
+                          }`}
+                        >
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="deliveryAddress"
+                              checked={selectedAddressId === item._id}
+                              onChange={() => setSelectedAddressId(item._id)}
+                              disabled={placingOrder}
+                            />
+                            <span className="form-check-label">
+                              <strong>{item.address}</strong>
+                              <br />
+                              {item.city} - {item.pincode}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : loadingAddresses ? (
+                    <p className="text-muted mb-0">
+                      Loading saved addresses...
+                    </p>
+                  ) : (
+                    <div className="mb-0">
+                      <p className="text-muted mb-2">
+                        No saved addresses found. Add one first to place your
+                        order.
+                      </p>
+                      <Link
+                        to="/customer/address"
+                        className="btn btn-sm btn-outline-primary"
+                      >
+                        Manage Addresses
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={placeOrder}
+                disabled={
+                  placingOrder ||
+                  loadingAddresses ||
+                  cart.length === 0 ||
+                  !selectedAddressId
+                }
+              >
+                {placingOrder ? "Placing Order..." : "Place Order"}
               </button>
 
               <button
                 className="btn btn-outline-danger w-100 mt-2"
-                onClick={() => setCart([])}
+                onClick={() => {
+                  setCart([]);
+                  setOrderError(null);
+                  setOrderMessage(null);
+                }}
               >
                 Clear Cart
               </button>

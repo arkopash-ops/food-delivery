@@ -26,4 +26,11 @@ router.patch(
     driverController._updateDriverIsAvailable
 );
 
+router.patch(
+    "/me/location",
+    protect,
+    requireRole("driver"),
+    driverController._updateDriverLocation
+);
+
 export default router;

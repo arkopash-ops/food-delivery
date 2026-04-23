@@ -40,3 +40,33 @@ export const updateDriverIsAvailable = async (
 
     return driver;
 };
+
+
+// update driver current location
+export const updateDriverLocation = async (
+    driverId: Types.ObjectId,
+    lng: number,
+    lat: number
+) => {
+    const driver = await DriverModel.findOneAndUpdate(
+        { driverId },
+        {
+            $set: {
+                currentLocation: {
+                    type: "Point",
+                    coordinates: [lng, lat],
+                    updateAt: new Date(),
+                },
+            },
+        },
+        { returnDocument: "after" }
+    );
+
+    if (!driver) {
+        const err = new Error("Driver not found.") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    return driver;
+};

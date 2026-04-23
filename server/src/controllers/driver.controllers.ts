@@ -83,3 +83,37 @@ export const _updateDriverIsAvailable = async (
         next(error);
     }
 };
+
+
+// update current location of driver
+export const _updateDriverLocation = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { lng, lat } = req.body;
+
+        if (typeof lng !== "number" || Number.isNaN(lng)) {
+            return res
+                .status(400)
+                .json({ success: false, message: "lng must be a number." });
+        }
+
+        if (typeof lat !== "number" || Number.isNaN(lat)) {
+            return res
+                .status(400)
+                .json({ success: false, message: "lat must be a number." });
+        }
+
+        const driver = await driverService.updateDriverLocation(user._id, lng, lat);
+
+        return res.status(200).json({
+            success: true,
+            driver,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

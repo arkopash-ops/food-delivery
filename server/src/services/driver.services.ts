@@ -55,7 +55,7 @@ export const updateDriverLocation = async (
                 currentLocation: {
                     type: "Point",
                     coordinates: [lng, lat],
-                    updateAt: new Date(),
+                    updatedAt: new Date(),
                 },
             },
         },

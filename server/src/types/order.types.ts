@@ -1,4 +1,5 @@
 import type { Types } from "mongoose";
+import type { ILocation } from "./address.types.js";
 
 export enum OrderStatus {
     PLACED = "PLACED",          // customer create order
@@ -11,23 +12,40 @@ export enum OrderStatus {
     DELIVERED = "DELIVERED"     // by driver only when customer recived
 }
 
+export type OrderActorRole =
+    | "customer"
+    | "restaurant_manager"
+    | "driver"
+    | "system";
+
 export interface IStatusHistory {
     status: OrderStatus;
     changedAt: Date;
-    changedBy: Types.ObjectId;
+    changedBy?: Types.ObjectId | null;
+    actorRole: OrderActorRole;
     note?: string;
 }
 
-export interface IItems {
+export interface IOrderItemSnapshot {
     menuItemId: Types.ObjectId;
+    categoryId?: Types.ObjectId;
     name: string;
+    image?: string;
     price: number;
     quantity: number;
+    total: number;
 }
 
 export interface IRating {
     rating: number;
     comment?: string;
+}
+
+export interface IDeliveryAddressSnapshot {
+    address: string;
+    city: string;
+    pincode: string;
+    location: ILocation;
 }
 
 export interface IOrder {
@@ -38,11 +56,14 @@ export interface IOrder {
     status: OrderStatus;
     statusHistory: IStatusHistory[];
 
-    items: IItems[];
+    items: IOrderItemSnapshot[];
 
     deliveryAddress: Types.ObjectId;
+    deliveryAddressSnapshot: IDeliveryAddressSnapshot;
+    deliveryLocation: ILocation;
 
     subTotal: number;
+    deliveryFee?: number;
     total: number;
 
     restaurantRating?: IRating | null;

@@ -29,7 +29,7 @@ const DriverSchema = new Schema({
             required: true
         },
 
-        updateAt: {
+        updatedAt: {
             type: Date,
             default: Date.now,
         },

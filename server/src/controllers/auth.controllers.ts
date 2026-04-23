@@ -4,14 +4,7 @@ import * as auth from "../services/auth.services.js";
 // register controller
 export const _register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { user, token } = await auth.register(req.body);
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 60 * 60 * 1000,
-        });
+        const { user } = await auth.register(req.body);
 
         return res.status(201).json({
             success: true,

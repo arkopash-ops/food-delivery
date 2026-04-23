@@ -2,6 +2,7 @@ import type { IUser, UserRole } from "../types/users.types.js";
 import { generateToken } from "../config/jwt.js";
 import bcrypt from "bcryptjs";
 import UserModel from "../models/users.models.js";
+import DriverModel from "../models/driver.models.js";
 
 export interface RegisterUser {
     _id: string;
@@ -19,7 +20,7 @@ export interface LoginUser {
 // register service
 export const register = async (
     userData: IUser
-): Promise<{ user: RegisterUser; token: string }> => {
+): Promise<{ user: RegisterUser }> => {
     const { name, email, password, role, phone } = userData;
 
     if (!password) {
@@ -61,6 +62,15 @@ export const register = async (
             role,
             phone,
         });
+
+        await DriverModel.create({
+            driverId: newUser._id,
+            isAvailable: false,
+            currentLocation: {
+                type: "Point",
+                coordinates: [0, 0],
+            },
+        });
     } else if (role === "restaurant_manager") {
         newUser = await UserModel.create({
             name,
@@ -81,8 +91,7 @@ export const register = async (
             email: newUser.email,
             role: newUser.role,
             phone: newUser.phone,
-        },
-        token: generateToken(newUser._id.toString()),
+        }
     };
 };
 

@@ -59,7 +59,7 @@ const Navbar = () => {
         </a>
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav">
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <ProtectedRoute>
                 <>
                   {role === "restaurant_manager" && (
@@ -96,9 +96,9 @@ const Navbar = () => {
                       <li className="nav-item">
                         <a
                           className="nav-link"
-                          onClick={() => navigate("/customer/dashboard")}
+                          onClick={() => navigate("/customer/home")}
                         >
-                          Dashboard
+                          Home
                         </a>
                       </li>
                       <li className="nav-item">
@@ -113,26 +113,20 @@ const Navbar = () => {
                   )}
 
                   {role === "driver" && (
-                    <>
-                      <li className="nav-item">
-                        <a
-                          className="nav-link"
-                          onClick={() => navigate("/driver/dashboard")}
-                        >
-                          Dashboard
-                        </a>
-                      </li>
-                    </>
+                    <li className="nav-item">
+                      <a
+                        className="nav-link"
+                        onClick={() => navigate("/driver/dashboard")}
+                      >
+                        Dashboard
+                      </a>
+                    </li>
                   )}
-
-                  <li className="nav-item">
-                    <a className="nav-link" onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
                 </>
               </ProtectedRoute>
-            ) : (
+            )}
+
+            {!isAuthenticated && (
               <>
                 <li className="nav-item">
                   <a className="nav-link" onClick={() => navigate("/")}>
@@ -148,6 +142,14 @@ const Navbar = () => {
               </>
             )}
           </ul>
+
+          {isAuthenticated && (
+            <div className="ms-auto">
+              <button className="btn btn-outline-danger" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

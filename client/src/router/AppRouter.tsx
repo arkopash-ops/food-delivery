@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
@@ -63,7 +63,7 @@ const AppRouter = () => {
 
           {/* customer */}
           <Route
-            path="/customer/dashboard"
+            path="/customer/home"
             element={
               <ProtectedRoute role="customer">
                 <CustomerHome />
@@ -88,6 +88,9 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
     </BrowserRouter>

@@ -18,23 +18,19 @@ interface Restaurant {
   address: Address;
   isOpen: boolean;
   image?: string;
-  avgPrepTimeMinutes?: number;
-  rejectionRate?: number;
-}
-
-interface Category {
-  _id: string;
-  name: string;
 }
 
 interface MenuItem {
   _id: string;
   name: string;
   image?: string;
-  description?: string;
   price: number;
-  category: Category | string;
   isAvailable: boolean;
+}
+
+interface CartItem extends MenuItem {
+  quantity: number;
+  restaurantId: string;
 }
 
 const CustomerHome = () => {
@@ -42,226 +38,259 @@ const CustomerHome = () => {
   const [menuItemsByRestaurant, setMenuItemsByRestaurant] = useState<
     Record<string, MenuItem[]>
   >({});
-  const [expandedRestaurantId, setExpandedRestaurantId] = useState<
-    string | null
-  >(null);
-  const [loadingMenuId, setLoadingMenuId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        const restaurantsRes = await fetch("http://localhost:8080/api/restaurant", {
+        const res = await fetch("http://localhost:8080/api/restaurant", {
           credentials: "include",
         });
 
-        if (!restaurantsRes.ok) {
-          const data = await restaurantsRes.json().catch(() => ({}));
-          throw new Error(data.message || "Failed to load restaurants");
-        }
+        const data = await res.json();
+        const restaurantsList = data.restaurants || [];
+        setRestaurants(restaurantsList);
 
-        const restaurantsData = await restaurantsRes.json();
-        setRestaurants(restaurantsData.restaurants || []);
+        const menus: Record<string, MenuItem[]> = {};
+
+        await Promise.all(
+          restaurantsList.map(async (r: Restaurant) => {
+            const menuRes = await fetch(
+              `http://localhost:8080/api/restaurant/${r._id}/menu`,
+              { credentials: "include" },
+            );
+            const menuData = await menuRes.json();
+            menus[r._id] = menuData.items || [];
+          }),
+        );
+
+        setMenuItemsByRestaurant(menus);
       } catch (err) {
         console.error(err);
-        setError("Something went wrong while loading restaurants");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRestaurants();
+    fetchData();
   }, []);
 
-  const handleRestaurantClick = async (restaurant: Restaurant) => {
-    if (expandedRestaurantId === restaurant._id) {
-      setExpandedRestaurantId(null);
-      return;
-    }
-
-    setExpandedRestaurantId(restaurant._id);
-
-    if (menuItemsByRestaurant[restaurant._id]) {
-      return;
-    }
-
-    try {
-      setLoadingMenuId(restaurant._id);
-
-      const menuRes = await fetch(
-        `http://localhost:8080/api/restaurant/${restaurant._id}/menu`,
-        {
-          credentials: "include",
-        },
-      );
-
-      if (!menuRes.ok) {
-        const data = await menuRes.json().catch(() => ({}));
-        throw new Error(data.message || `Failed to load menu for ${restaurant.name}`);
+  const addToCart = (item: MenuItem, restaurantId: string) => {
+    setCart((prev) => {
+      if (prev.length > 0 && prev[0].restaurantId !== restaurantId) {
+        alert(
+          "You can only order from one restaurant at a time. Clear cart first.",
+        );
+        return prev;
       }
 
-      const menuData = await menuRes.json();
-      setMenuItemsByRestaurant((prev) => ({
-        ...prev,
-        [restaurant._id]: menuData.items || [],
-      }));
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong while loading the menu");
-    } finally {
-      setLoadingMenuId(null);
-    }
+      const existing = prev.find((c) => c._id === item._id);
+
+      if (existing) {
+        return prev.map((c) =>
+          c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c,
+        );
+      }
+
+      return [...prev, { ...item, quantity: 1, restaurantId }];
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="container mt-4">
-        <h3>Restaurants</h3>
-        <p>Loading...</p>
-      </div>
+  const increaseQty = (id: string) => {
+    setCart((prev) =>
+      prev.map((c) => (c._id === id ? { ...c, quantity: c.quantity + 1 } : c)),
     );
-  }
+  };
 
-  if (error) {
-    return (
-      <div className="container mt-4">
-        <h3>Restaurants</h3>
-        <p className="text-danger">{error}</p>
-      </div>
+  const decreaseQty = (id: string) => {
+    setCart((prev) =>
+      prev
+        .map((c) => (c._id === id ? { ...c, quantity: c.quantity - 1 } : c))
+        .filter((c) => c.quantity > 0),
     );
-  }
+  };
+
+  const subtotal = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
+  );
+  const total = subtotal;
+
+  if (loading) return <p className="p-4">Loading...</p>;
 
   return (
     <div className="container mt-4">
-      <h3>Restaurants</h3>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3>Restaurants</h3>
 
-      {restaurants.length === 0 ? (
-        <div className="alert alert-info mt-3">No restaurants found.</div>
-      ) : (
-        <div className="d-grid gap-4 mt-3">
-          {restaurants.map((restaurant) => {
-            const isExpanded = expandedRestaurantId === restaurant._id;
-            const items = menuItemsByRestaurant[restaurant._id] || [];
+        <button
+          className="btn btn-dark"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#cartCanvas"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            className="bi bi-cart4"
+            viewBox="0 0 16 16"
+          >
+            <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l.5 2H5V5zM6 5v2h2V5zm3 0v2h2V5zm3 0v2h1.36l.5-2zm1.11 3H12v2h.61zM11 8H9v2h2zM8 8H6v2h2zM5 8H3.89l.5 2H5zm0 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0" />
+          </svg>{" "}
+          ({cart.length})
+        </button>
+      </div>
 
-            return (
-            <div className="card" key={restaurant._id}>
-              <div className="card-body">
-                <button
-                  type="button"
-                  className="btn text-start w-100 p-0 border-0 bg-transparent"
-                  onClick={() => handleRestaurantClick(restaurant)}
-                >
-                  <div className="row g-4 align-items-start">
-                    <div className="col-12 col-lg-4">
-                      {restaurant.image && (
-                        <img
-                          src={restaurant.image}
-                          alt={restaurant.name}
-                          className="img-fluid rounded mb-3"
-                          style={{
-                            width: "100%",
-                            maxHeight: "220px",
-                            objectFit: "cover",
-                          }}
-                        />
-                      )}
+      {restaurants.map((restaurant) => {
+        const items = menuItemsByRestaurant[restaurant._id] || [];
 
-                      <h4 className="mb-2">{restaurant.name}</h4>
-                      <p className="mb-1">
-                        <strong>Status:</strong>{" "}
-                        {restaurant.isOpen ? "Open" : "Closed"}
-                      </p>
-                      <p className="mb-1">
-                        <strong>Address:</strong> {restaurant.address.address},{" "}
-                        {restaurant.address.city} - {restaurant.address.pincode}
-                      </p>
-                      {typeof restaurant.avgPrepTimeMinutes === "number" && (
-                        <p className="mb-1">
-                          <strong>Avg prep time:</strong>{" "}
-                          {restaurant.avgPrepTimeMinutes} minutes
-                        </p>
-                      )}
-                      {typeof restaurant.rejectionRate === "number" && (
-                        <p className="mb-0">
-                          <strong>Rejection rate:</strong>{" "}
-                          {restaurant.rejectionRate}%
-                        </p>
-                      )}
-                    </div>
+        return (
+          <div className="mb-4" key={restaurant._id}>
+            <h4 className="mb-3">{restaurant.name}</h4>
 
-                    <div className="col-12 col-lg-8 d-flex justify-content-lg-end align-items-start">
-                      <span className="badge text-bg-dark fs-6">
-                        {isExpanded ? "Hide Menu" : "Show Menu"}
-                      </span>
+            <div className="d-flex gap-3 overflow-auto">
+              {items.map((item) => {
+                const cartItem = cart.find((c) => c._id === item._id);
+
+                return (
+                  <div
+                    key={item._id}
+                    className="card"
+                    style={{ minWidth: "300px" }}
+                  >
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        className="card-img-top"
+                        style={{ height: "220px", objectFit: "cover" }}
+                      />
+                    )}
+
+                    <div className="card-body">
+                      <h6>{item.name}</h6>
+                      <small>Rs. {item.price}</small>
+
+                      <div className="mt-2">
+                        {cartItem ? (
+                          <div className="d-flex gap-2 align-items-center">
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => decreaseQty(item._id)}
+                            >
+                              -
+                            </button>
+
+                            <span>{cartItem.quantity}</span>
+
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => increaseQty(item._id)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => addToCart(item, restaurant._id)}
+                          >
+                            Add to Cart
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
-                {isExpanded && (
-                  <div className="mt-4 border-top pt-4">
-                    <h5 className="mb-3">Menu Items</h5>
+      {/*cart offcanvas */}
 
-                    {loadingMenuId === restaurant._id ? (
-                      <p className="text-muted mb-0">Loading menu...</p>
-                    ) : items.length === 0 ? (
-                      <p className="text-muted mb-0">
-                        No menu items available for this restaurant.
-                      </p>
-                    ) : (
-                      <div className="row g-3">
-                        {items.map((item) => (
-                          <div className="col-12 col-md-6" key={item._id}>
-                            <div className="card h-100">
-                              {item.image && (
-                                <img
-                                  src={item.image}
-                                  alt={item.name}
-                                  className="card-img-top"
-                                  style={{ height: "180px", objectFit: "cover" }}
-                                />
-                              )}
-                              <div className="card-body">
-                                <div className="d-flex justify-content-between gap-3">
-                                  <h6 className="card-title mb-1">{item.name}</h6>
-                                  <strong>Rs. {item.price}</strong>
-                                </div>
-                                <p className="text-muted mb-2">
-                                  {typeof item.category === "string"
-                                    ? item.category
-                                    : item.category?.name}
-                                </p>
-                                {item.description && (
-                                  <p className="card-text small mb-2">
-                                    {item.description}
-                                  </p>
-                                )}
-                                <span
-                                  className={`badge ${
-                                    item.isAvailable
-                                      ? "text-bg-success"
-                                      : "text-bg-secondary"
-                                  }`}
-                                >
-                                  {item.isAvailable ? "Available" : "Unavailable"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+      <div className="offcanvas offcanvas-end" tabIndex={-1} id="cartCanvas">
+        <div className="offcanvas-header">
+          <h5>Cart</h5>
+          <button className="btn-close" data-bs-dismiss="offcanvas" />
+        </div>
+
+        <div className="offcanvas-body">
+          {cart.length === 0 ? (
+            <p>Cart is empty</p>
+          ) : (
+            <>
+              {cart.map((item) => (
+                <div key={item._id} className="mb-3">
+                  <div>
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        style={{
+                          width: "100%",
+                          height: "140px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          marginBottom: "8px",
+                        }}
+                      />
                     )}
                   </div>
-                )}
+                  <div className="d-flex justify-content-between">
+                    <strong>{item.name}</strong>
+                    <span>Rs. {item.price * item.quantity}</span>
+                  </div>
+
+                  <div className="d-flex gap-2 align-items-center mt-1">
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => decreaseQty(item._id)}
+                    >
+                      -
+                    </button>
+
+                    <span>{item.quantity}</span>
+
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={() => increaseQty(item._id)}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <hr />
+
+              <div className="d-flex justify-content-between">
+                <span>Subtotal</span>
+                <span>Rs. {subtotal}</span>
               </div>
-            </div>
-          );
-          })}
+
+              <div className="d-flex justify-content-between fw-bold mt-2">
+                <span>Total</span>
+                <span>Rs. {total}</span>
+              </div>
+
+              <button className="btn btn-success w-100 mt-3">
+                Place Order
+              </button>
+
+              <button
+                className="btn btn-outline-danger w-100 mt-2"
+                onClick={() => setCart([])}
+              >
+                Clear Cart
+              </button>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../../../lib/socket";
 
 interface Location {
   type: "Point";
@@ -111,6 +112,35 @@ const ManagerDashboard = () => {
     };
 
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    socket.connect();
+
+    const handleOrderUpdated = () => {
+      void (async () => {
+        try {
+          const res = await fetch("http://localhost:8080/api/restaurant/me/order", {
+            credentials: "include",
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(data.message || "Failed to load orders");
+          }
+
+          setPlacedOrders(data.orders || []);
+        } catch (err) {
+          console.error(err);
+        }
+      })();
+    };
+
+    socket.on("order:updated", handleOrderUpdated);
+
+    return () => {
+      socket.off("order:updated", handleOrderUpdated);
+    };
   }, []);
 
   const handleAddRestaurantClick = () => {

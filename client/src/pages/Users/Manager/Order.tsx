@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { socket } from "../../../lib/socket";
 
 type OrderStatus = "PLACED" | "ACCEPTED" | "REJECTED";
 
@@ -112,6 +113,49 @@ const Order = () => {
     };
 
     fetchOrders();
+  }, [activeStatus, focusedOrderId]);
+
+  useEffect(() => {
+    socket.connect();
+
+    const handleOrderUpdated = () => {
+      void (async () => {
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/restaurant/me/order?status=${activeStatus}`,
+            {
+              credentials: "include",
+            },
+          );
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(data.message || "Failed to load orders");
+          }
+
+          const nextOrders = (data.orders || []) as ManagerOrder[];
+          setOrders(nextOrders);
+
+          setActiveOrderId((currentActiveOrderId) => {
+            const targetOrder =
+              nextOrders.find((order) => order._id === currentActiveOrderId) ||
+              nextOrders.find((order) => order._id === focusedOrderId) ||
+              nextOrders[0] ||
+              null;
+
+            return targetOrder?._id ?? null;
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      })();
+    };
+
+    socket.on("order:updated", handleOrderUpdated);
+
+    return () => {
+      socket.off("order:updated", handleOrderUpdated);
+    };
   }, [activeStatus, focusedOrderId]);
 
   const activeOrder =

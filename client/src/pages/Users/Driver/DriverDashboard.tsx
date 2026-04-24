@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import LocationMap from "../../../components/LocationMap";
+import { socket } from "../../../lib/socket";
 
 const DRIVER_HISTORY_STORAGE_KEY = "driverDeliveryHistory";
 
@@ -115,6 +116,48 @@ const DriverDashboard = () => {
     fetchDriverDashboard();
   }, []);
 
+  useEffect(() => {
+    socket.connect();
+
+    const handleOrderUpdated = (updatedOrder: DriverOrder) => {
+      if (updatedOrder.status === "DELIVERED") {
+        const nextHistoryEntry: DeliveredDriverOrder = {
+          ...updatedOrder,
+          deliveredAt: new Date().toISOString(),
+        };
+
+        try {
+          const existingHistory = JSON.parse(
+            localStorage.getItem(DRIVER_HISTORY_STORAGE_KEY) || "[]",
+          ) as DeliveredDriverOrder[];
+
+          const nextHistory = [
+            nextHistoryEntry,
+            ...existingHistory.filter((item) => item._id !== nextHistoryEntry._id),
+          ];
+
+          localStorage.setItem(
+            DRIVER_HISTORY_STORAGE_KEY,
+            JSON.stringify(nextHistory),
+          );
+        } catch (storageError) {
+          console.error("Failed to save driver history", storageError);
+        }
+
+        setOrder(null);
+        return;
+      }
+
+      setOrder(updatedOrder);
+    };
+
+    socket.on("order:updated", handleOrderUpdated);
+
+    return () => {
+      socket.off("order:updated", handleOrderUpdated);
+    };
+  }, []);
+
   const handleToggleAvailability = async () => {
     if (!driver) return;
 
@@ -197,36 +240,6 @@ const DriverDashboard = () => {
       }
 
       const updatedOrder = (data.order || null) as DriverOrder | null;
-
-      if (updatedOrder?.status === "DELIVERED") {
-        const nextHistoryEntry: DeliveredDriverOrder = {
-          ...updatedOrder,
-          deliveredAt: new Date().toISOString(),
-        };
-
-        try {
-          const existingHistory = JSON.parse(
-            localStorage.getItem(DRIVER_HISTORY_STORAGE_KEY) || "[]",
-          ) as DeliveredDriverOrder[];
-
-          const nextHistory = [
-            nextHistoryEntry,
-            ...existingHistory.filter(
-              (item) => item._id !== nextHistoryEntry._id,
-            ),
-          ];
-
-          localStorage.setItem(
-            DRIVER_HISTORY_STORAGE_KEY,
-            JSON.stringify(nextHistory),
-          );
-        } catch (storageError) {
-          console.error("Failed to save driver history", storageError);
-        }
-
-        setOrder(null);
-        return;
-      }
 
       setOrder(updatedOrder);
     } catch (err) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import LocationMap from "../../../components/LocationMap";
+import { socket } from "../../../lib/socket";
 
 interface Location {
   type: "Point";
@@ -88,6 +89,44 @@ const Orders = () => {
     };
 
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    socket.connect();
+
+    const handleOrderUpdated = (updatedOrder: CustomerOrder) => {
+      setOrders((prev) => {
+        if (updatedOrder.status === "DELIVERED") {
+          const nextOrders = prev.filter(
+            (order) => order._id !== updatedOrder._id,
+          );
+          setActiveOrderId((currentActiveOrderId) => {
+            if (currentActiveOrderId !== updatedOrder._id) {
+              return currentActiveOrderId;
+            }
+
+            return nextOrders[0]?._id ?? null;
+          });
+          return nextOrders;
+        }
+
+        const hasOrder = prev.some((order) => order._id === updatedOrder._id);
+
+        if (!hasOrder) {
+          return prev;
+        }
+
+        return prev.map((order) =>
+          order._id === updatedOrder._id ? updatedOrder : order,
+        );
+      });
+    };
+
+    socket.on("order:updated", handleOrderUpdated);
+
+    return () => {
+      socket.off("order:updated", handleOrderUpdated);
+    };
   }, []);
 
   const activeOrder =

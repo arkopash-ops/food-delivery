@@ -6,6 +6,7 @@ import OrderModel from "../models/order.models.js";
 import RestaurantModel from "../models/restaurant.models.js";
 import { OrderStatus } from "../types/order.types.js";
 import type { ILocation } from "../types/address.types.js";
+import { emitOrderUpdated } from "../socket.js";
 
 export interface CreateOrderItemInput {
     menuItemId: string;
@@ -90,6 +91,7 @@ const updateOrderStatusForRestaurant = async (
         _id: orderId,
         restaurantId: restaurant._id,
     });
+    let assignedDriverUserId: string | null = null;
 
     if (!order) {
         const err = new Error("Order not found for this restaurant") as any;
@@ -134,6 +136,7 @@ const updateOrderStatusForRestaurant = async (
         });
 
         order.driverId = assignedDriver._id;
+        assignedDriverUserId = assignedDriver.driverId.toString();
         order.status = OrderStatus.ASSIGNED;
         order.statusHistory.push({
             status: OrderStatus.ASSIGNED,
@@ -159,6 +162,20 @@ const updateOrderStatusForRestaurant = async (
     }
 
     await order.populate("customerId", "name email phone");
+    await order.populate("restaurantId", "name image address");
+    await order.populate({
+        path: "driverId",
+        select: "driverId currentLocation",
+        populate: {
+            path: "driverId",
+            select: "name phone",
+        },
+    });
+
+    emitOrderUpdated(order.toObject(), {
+        customerUserId: order.customerId?._id?.toString?.() ?? order.customerId?.toString?.(),
+        driverUserId: assignedDriverUserId,
+    });
 
     return order;
 };
@@ -373,6 +390,17 @@ export const createOrder = async (
         subTotal,
         deliveryFee,
         total,
+    });
+
+    await order.populate("customerId", "name email phone");
+    await order.populate("restaurantId", "name image address managerId");
+
+    emitOrderUpdated(order.toObject(), {
+        customerUserId: customerId.toString(),
+        restaurantManagerUserId:
+            order.restaurantId && typeof order.restaurantId === "object" && "managerId" in order.restaurantId
+                ? order.restaurantId.managerId?.toString?.() ?? null
+                : null,
     });
 
     return order;

@@ -3,6 +3,7 @@ import type { DriverDocument } from "../models/driver.models.js";
 import DriverModel from "../models/driver.models.js";
 import OrderModel from "../models/order.models.js";
 import { OrderStatus } from "../types/order.types.js";
+import { emitOrderUpdated } from "../socket.js";
 
 const updateOrderStatusForDriver = async (
     driverUserId: Types.ObjectId,
@@ -57,6 +58,18 @@ const updateOrderStatusForDriver = async (
 
     await order.populate("restaurantId", "name image address");
     await order.populate("customerId", "name email phone");
+    await order.populate({
+        path: "driverId",
+        select: "driverId currentLocation",
+        populate: {
+            path: "driverId",
+            select: "name phone",
+        },
+    });
+
+    emitOrderUpdated(order.toObject(), {
+        driverUserId: driverUserId.toString(),
+    });
 
     return order;
 };

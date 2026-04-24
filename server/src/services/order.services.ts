@@ -1,9 +1,11 @@
 import { Types } from "mongoose";
 import AddressModel from "../models/address.models.js";
+import DriverModel from "../models/driver.models.js";
 import MenuItemModel from "../models/menuItem.models.js";
 import OrderModel from "../models/order.models.js";
 import RestaurantModel from "../models/restaurant.models.js";
 import { OrderStatus } from "../types/order.types.js";
+import type { ILocation } from "../types/address.types.js";
 
 export interface CreateOrderItemInput {
     menuItemId: string;
@@ -28,6 +30,26 @@ const isRestaurantOrderStatus = (
     value: string
 ): value is RestaurantOrderStatus => {
     return restaurantOrderStatuses.includes(value as RestaurantOrderStatus);
+};
+
+
+// find nearest driver and assign order
+const assignNearestAvailableDriver = async (pickupLocation: ILocation) => {
+    return DriverModel.findOneAndUpdate(
+        {
+            isAvailable: true,
+            currentLocation: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: pickupLocation.coordinates,
+                    },
+                },
+            },
+        },
+        { $set: { isAvailable: false } },
+        { returnDocument: "after" }
+    );
 };
 
 
@@ -73,13 +95,52 @@ const updateOrderStatusForRestaurant = async (
         throw err;
     }
 
-    order.status = nextStatus;
-    order.statusHistory.push({
-        status: nextStatus,
-        changedAt: new Date(),
-        changedBy: managerId,
-        actorRole: "restaurant_manager",
-    });
+    if (nextStatus === OrderStatus.READY) {
+        const restaurant = await RestaurantModel.findById(order.restaurantId)
+            .select("address.location")
+            .lean();
+
+        if (!restaurant?.address?.location) {
+            const err = new Error("Restaurant pickup location not found") as any;
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const assignedDriver = await assignNearestAvailableDriver(
+            restaurant.address.location
+        );
+
+        if (!assignedDriver) {
+            const err = new Error("No available driver found for this order") as any;
+            err.statusCode = 404;
+            throw err;
+        }
+
+        order.statusHistory.push({
+            status: OrderStatus.READY,
+            changedAt: new Date(),
+            changedBy: managerId,
+            actorRole: "restaurant_manager",
+        });
+
+        order.driverId = assignedDriver._id;
+        order.status = OrderStatus.ASSIGNED;
+        order.statusHistory.push({
+            status: OrderStatus.ASSIGNED,
+            changedAt: new Date(),
+            changedBy: assignedDriver._id,
+            actorRole: "system",
+            note: "Assigned to nearest available driver",
+        });
+    } else {
+        order.status = nextStatus;
+        order.statusHistory.push({
+            status: nextStatus,
+            changedAt: new Date(),
+            changedBy: managerId,
+            actorRole: "restaurant_manager",
+        });
+    }
 
     await order.save();
 

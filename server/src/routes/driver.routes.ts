@@ -12,6 +12,34 @@ router.get(
     driverController._getMyProfile
 );
 
+router.get(
+    "/me/order",
+    protect,
+    requireRole("driver"),
+    driverController._getMyAssignedOrder
+);
+
+router.patch(
+    "/me/order/:orderId/picked-up",
+    protect,
+    requireRole("driver"),
+    driverController._pickUpAssignedOrder
+);
+
+router.patch(
+    "/me/order/:orderId/on-the-way",
+    protect,
+    requireRole("driver"),
+    driverController._onTheWayPickedUpOrder
+);
+
+router.patch(
+    "/me/order/:orderId/delivered",
+    protect,
+    requireRole("driver"),
+    driverController._deliverOnTheWayOrder
+);
+
 // fetch available drivers
 router.get(
     "/is-available",

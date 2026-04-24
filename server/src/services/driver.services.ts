@@ -1,6 +1,65 @@
-import type { Types } from "mongoose";
+import { Types } from "mongoose";
 import type { DriverDocument } from "../models/driver.models.js";
 import DriverModel from "../models/driver.models.js";
+import OrderModel from "../models/order.models.js";
+import { OrderStatus } from "../types/order.types.js";
+
+const updateOrderStatusForDriver = async (
+    driverUserId: Types.ObjectId,
+    orderId: string,
+    currentStatus: OrderStatus,
+    nextStatus: OrderStatus.PICKED_UP | OrderStatus.ON_THE_WAY | OrderStatus.DELIVERED
+) => {
+    if (!Types.ObjectId.isValid(orderId)) {
+        const err = new Error("Valid orderId is required") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const driver = await DriverModel.findOne({ driverId: driverUserId })
+        .select("_id")
+        .lean();
+
+    if (!driver) {
+        const err = new Error("Driver not found.") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    const order = await OrderModel.findOne({
+        _id: orderId,
+        driverId: driver._id,
+    });
+
+    if (!order) {
+        const err = new Error("Order not found for this driver.") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (order.status !== currentStatus) {
+        const err = new Error(
+            `Only ${currentStatus} orders can be changed to ${nextStatus} by driver`
+        ) as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    order.status = nextStatus;
+    order.statusHistory.push({
+        status: nextStatus,
+        changedAt: new Date(),
+        changedBy: driver._id,
+        actorRole: "driver",
+    });
+
+    await order.save();
+
+    await order.populate("restaurantId", "name image address");
+    await order.populate("customerId", "name email phone");
+
+    return order;
+};
 
 // get drivers profile
 export const getMyProfile = async (driverId: Types.ObjectId) => {
@@ -69,4 +128,71 @@ export const updateDriverLocation = async (
     }
 
     return driver;
+};
+
+
+// get assigned order details for driver
+export const getMyAssignedOrder = async (driverUserId: Types.ObjectId) => {
+    const driver = await DriverModel.findOne({ driverId: driverUserId })
+        .select("_id")
+        .lean();
+
+    if (!driver) {
+        const err = new Error("Driver not found.") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    const order = await OrderModel.findOne({
+        driverId: driver._id,
+        status: OrderStatus.ASSIGNED,
+    })
+        .populate("restaurantId", "name image address")
+        .populate("customerId", "name email phone")
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return order;
+};
+
+
+// status change to PICKED_UP for ASSIGNED order
+export const pickUpAssignedOrder = async (
+    driverUserId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForDriver(
+        driverUserId,
+        orderId,
+        OrderStatus.ASSIGNED,
+        OrderStatus.PICKED_UP
+    );
+};
+
+
+// status change to ON_THE_WAY for PICKED_UP order
+export const onTheWayPickedUpOrder = async (
+    driverUserId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForDriver(
+        driverUserId,
+        orderId,
+        OrderStatus.PICKED_UP,
+        OrderStatus.ON_THE_WAY
+    );
+};
+
+
+// status change to DELIVERED for ON_THE_WAY order
+export const deliverOnTheWayOrder = async (
+    driverUserId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForDriver(
+        driverUserId,
+        orderId,
+        OrderStatus.ON_THE_WAY,
+        OrderStatus.DELIVERED
+    );
 };

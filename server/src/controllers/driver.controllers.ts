@@ -117,3 +117,110 @@ export const _updateDriverLocation = async (
         next(error);
     }
 };
+
+
+// get assigned order for driver
+export const _getMyAssignedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const order = await driverService.getMyAssignedOrder(user._id);
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to PICKED_UP for ASSIGNED order
+export const _pickUpAssignedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await driverService.pickUpAssignedOrder(user._id, orderId);
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to ON_THE_WAY for PICKED_UP order
+export const _onTheWayPickedUpOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await driverService.onTheWayPickedUpOrder(user._id, orderId);
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to DELIVERED for ON_THE_WAY order
+export const _deliverOnTheWayOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await driverService.deliverOnTheWayOrder(user._id, orderId);
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -46,3 +46,119 @@ export const _getMyOrders = async (
         next(error);
     }
 };
+
+
+// get PLACED orders for restaurant manager
+export const _getMyPlacedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const orders = await orderService.getMyPlacedOrder(user._id);
+
+        return res.status(200).json({
+            success: true,
+            orders,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to ACCEPTED for PLACED order
+export const _acceptPlacedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await orderService.acceptPlacedOrder(
+            user._id,
+            orderId
+        );
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to REJECTED for PLACED order
+export const _rejectPlacedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await orderService.rejectPlacedOrder(
+            user._id,
+            orderId
+        );
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// status change to READY for ACCEPTED order
+export const _readyAcceptedOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await orderService.readyAcceptedOrder(
+            user._id,
+            orderId
+        );
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

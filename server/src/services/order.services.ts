@@ -15,6 +15,90 @@ export interface CreateOrderInput {
     items: CreateOrderItemInput[];
 }
 
+
+// update the status of order
+const updateOrderStatusForRestaurant = async (
+    managerId: Types.ObjectId,
+    orderId: string,
+    currentStatus: OrderStatus,
+    nextStatus: OrderStatus.ACCEPTED | OrderStatus.REJECTED | OrderStatus.READY
+) => {
+    if (!Types.ObjectId.isValid(orderId)) {
+        const err = new Error("Valid orderId is required") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const restaurant = await RestaurantModel.findOne({ managerId })
+        .select("_id")
+        .lean();
+
+    if (!restaurant) {
+        const err = new Error("Restaurant not found for this manager") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    const order = await OrderModel.findOne({
+        _id: orderId,
+        restaurantId: restaurant._id,
+    });
+
+    if (!order) {
+        const err = new Error("Order not found for this restaurant") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (order.status !== currentStatus) {
+        const err = new Error(
+            `Only ${currentStatus} orders can be changed to ${nextStatus} by restaurant`
+        ) as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    order.status = nextStatus;
+    order.statusHistory.push({
+        status: nextStatus,
+        changedAt: new Date(),
+        changedBy: managerId,
+        actorRole: "restaurant_manager",
+    });
+
+    await order.save();
+
+    if (nextStatus === OrderStatus.REJECTED) {
+        await updateRestaurantRejectionRate(order.restaurantId);
+    }
+
+    await order.populate("customerId", "name email phone");
+
+    return order;
+};
+
+
+// update rejection rate for restaurant
+const updateRestaurantRejectionRate = async (restaurantId: Types.ObjectId) => {
+    const [totalOrders, rejectedOrders] = await Promise.all([
+        OrderModel.countDocuments({ restaurantId }),
+        OrderModel.countDocuments({
+            restaurantId,
+            status: OrderStatus.REJECTED,
+        }),
+    ]);
+
+    const rejectionRate = totalOrders === 0
+        ? 0
+        : Number(((rejectedOrders / totalOrders) * 100).toFixed(2));
+
+    await RestaurantModel.findByIdAndUpdate(restaurantId, {
+        $set: { rejectionRate },
+    });
+};
+
+
+
 // create order for user
 export const createOrder = async (
     customerId: Types.ObjectId,
@@ -193,4 +277,70 @@ export const getMyOrders = async (customerId: Types.ObjectId) => {
         .lean();
 
     return orders;
+};
+
+
+// get PLACED orders for the logged-in restaurant manager
+export const getMyPlacedOrder = async (
+    managerId: Types.ObjectId
+) => {
+    const restaurant = await RestaurantModel.findOne({ managerId })
+        .select("_id")
+        .lean();
+
+    if (!restaurant) {
+        return [];
+    }
+
+    const orders = await OrderModel.find({
+        restaurantId: restaurant._id,
+        status: OrderStatus.PLACED,
+    })
+        .populate("customerId", "name email phone")
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return orders;
+};
+
+
+// status change to ACCEPTED for PLACED order
+export const acceptPlacedOrder = async (
+    managerId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForRestaurant(
+        managerId,
+        orderId,
+        OrderStatus.PLACED,
+        OrderStatus.ACCEPTED
+    );
+};
+
+
+// status change to REJECTED for PLACED order
+export const rejectPlacedOrder = async (
+    managerId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForRestaurant(
+        managerId,
+        orderId,
+        OrderStatus.PLACED,
+        OrderStatus.REJECTED
+    );
+};
+
+
+// status change to READY for ACCEPTED order
+export const readyAcceptedOrder = async (
+    managerId: Types.ObjectId,
+    orderId: string
+) => {
+    return updateOrderStatusForRestaurant(
+        managerId,
+        orderId,
+        OrderStatus.ACCEPTED,
+        OrderStatus.READY
+    );
 };

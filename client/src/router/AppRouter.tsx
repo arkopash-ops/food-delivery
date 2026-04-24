@@ -11,14 +11,17 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import Restaurant from "../pages/Users/Managers/Resaturant";
 import Category from "../pages/Users/Managers/Category";
 import MenuItem from "../pages/Users/Managers/MenuItem";
+import GuestOnlyRoute from "../components/GuestOnlyRoute";
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Layout>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route element={<GuestOnlyRoute />}>
+            <Route path="/" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
 
           {/* restaurant_manager */}
           <Route
@@ -71,14 +74,14 @@ const AppRouter = () => {
               </ProtectedRoute>
             }
           />
-            <Route
-              path="/customer/orders"
-              element={
-                <ProtectedRoute role="customer">
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/customer/orders"
+            element={
+              <ProtectedRoute role="customer">
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/customer/address"
             element={

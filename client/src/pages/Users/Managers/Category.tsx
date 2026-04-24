@@ -1,4 +1,3 @@
-// src/pages/manager/CategoryPage.tsx
 import { useEffect, useState } from "react";
 
 interface Category {
@@ -18,10 +17,16 @@ const CategoryPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [errors, setErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
+
   const resetForm = () => {
     setName("");
     setDescription("");
     setEditingId(null);
+    setErrors({});
   };
 
   const fetchCategories = async () => {
@@ -55,10 +60,24 @@ const CategoryPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newErrors: { name?: string; description?: string } = {};
+
     if (!name.trim()) {
-      alert("Name is required");
+      newErrors.name = "Name is required";
+    } else if (name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    if (description && description.trim().length < 5) {
+      newErrors.description = "Description must be at least 5 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({});
 
     try {
       setSubmitting(true);
@@ -182,21 +201,29 @@ const CategoryPage = () => {
               <label className="form-label">Name</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.name ? "is-invalid" : ""}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={submitting}
               />
+              {errors.name && (
+                <small className="text-danger">{errors.name}</small>
+              )}
             </div>
+
             <div className="mb-3">
               <label className="form-label">Description</label>
               <textarea
-                className="form-control"
+                className={`form-control ${errors.description ? "is-invalid" : ""}`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={submitting}
               />
+              {errors.description && (
+                <small className="text-danger">{errors.description}</small>
+              )}
             </div>
+
             <div className="d-flex gap-2">
               <button
                 type="submit"

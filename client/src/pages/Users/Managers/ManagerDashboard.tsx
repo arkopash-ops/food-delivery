@@ -1,4 +1,3 @@
-// src/pages/manager/ManagerDashboard.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 

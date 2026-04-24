@@ -1,4 +1,3 @@
-// src/pages/manager/RestaurantForm.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import LocationMap from "../../../components/LocationMap";
@@ -17,6 +16,15 @@ const Restaurant = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
+
+  const [errors, setErrors] = useState<{
+    name?: string;
+    addressLine?: string;
+    city?: string;
+    pincode?: string;
+    latitude?: string;
+    longitude?: string;
+  }>({});
 
   const navigate = useNavigate();
 
@@ -70,6 +78,48 @@ const Restaurant = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const newErrors: typeof errors = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Restaurant name is required";
+    } else if (name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    if (!addressLine.trim()) {
+      newErrors.addressLine = "Address is required";
+    }
+
+    if (!city.trim()) {
+      newErrors.city = "City is required";
+    }
+
+    if (!pincode.trim()) {
+      newErrors.pincode = "Pincode is required";
+    } else if (!/^\d{6}$/.test(pincode)) {
+      newErrors.pincode = "Enter a valid 6-digit pincode";
+    }
+
+    if (!latitude) {
+      newErrors.latitude = "Latitude is required";
+    } else if (isNaN(Number(latitude))) {
+      newErrors.latitude = "Invalid latitude";
+    }
+
+    if (!longitude) {
+      newErrors.longitude = "Longitude is required";
+    } else if (isNaN(Number(longitude))) {
+      newErrors.longitude = "Invalid longitude";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     setLoading(true);
 
     try {
@@ -150,41 +200,45 @@ const Restaurant = () => {
         <div className="mb-3">
           <label className="form-label">Restaurant Name</label>
           <input
-            className="form-control"
+            className={`form-control ${errors.name ? "is-invalid" : ""}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            required
           />
+          {errors.name && <small className="text-danger">{errors.name}</small>}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Address Line</label>
           <input
-            className="form-control"
+            className={`form-control ${errors.addressLine ? "is-invalid" : ""}`}
             value={addressLine}
             onChange={(e) => setAddressLine(e.target.value)}
-            required
           />
+          {errors.addressLine && (
+            <small className="text-danger">{errors.addressLine}</small>
+          )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">City</label>
           <input
-            className="form-control"
+            className={`form-control ${errors.city ? "is-invalid" : ""}`}
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            required
           />
+          {errors.city && <small className="text-danger">{errors.city}</small>}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Pincode</label>
           <input
-            className="form-control"
+            className={`form-control ${errors.pincode ? "is-invalid" : ""}`}
             value={pincode}
             onChange={(e) => setPincode(e.target.value)}
-            required
           />
+          {errors.pincode && (
+            <small className="text-danger">{errors.pincode}</small>
+          )}
         </div>
 
         {/* Map + coordinates */}
@@ -204,23 +258,27 @@ const Restaurant = () => {
         <div className="mb-3">
           <label className="form-label">Latitude</label>
           <input
-            className="form-control"
+            type="number"
+            className={`form-control ${errors.latitude ? "is-invalid" : ""}`}
             value={latitude}
             onChange={(e) => setLatitude(e.target.value)}
-            required
-            type="number"
           />
+          {errors.latitude && (
+            <small className="text-danger">{errors.latitude}</small>
+          )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Longitude</label>
           <input
-            className="form-control"
+            type="number"
+            className={`form-control ${errors.longitude ? "is-invalid" : ""}`}
             value={longitude}
             onChange={(e) => setLongitude(e.target.value)}
-            required
-            type="number"
           />
+          {errors.longitude && (
+            <small className="text-danger">{errors.longitude}</small>
+          )}
         </div>
 
         <div className="form-check mb-3">

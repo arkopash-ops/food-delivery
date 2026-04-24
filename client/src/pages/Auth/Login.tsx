@@ -12,9 +12,8 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const validateEmail = (email: string) =>
+    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +71,11 @@ const Login = () => {
         window.dispatchEvent(new Event("authChanged"));
 
         if (user.role === "restaurant_manager") {
-          navigate("/manager/dashboard");
+          navigate("/manager/dashboard", { replace: true });
         } else if (user.role === "customer") {
-          navigate("/customer/home");
+          navigate("/customer/home", { replace: true });
         } else if (user.role === "driver") {
-          navigate("/driver/dashboard");
+          navigate("/driver/dashboard", { replace: true });
         } else {
           navigate("/");
         }

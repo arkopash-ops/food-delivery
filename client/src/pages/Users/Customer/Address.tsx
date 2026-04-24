@@ -85,10 +85,11 @@ const Address = () => {
 
     if (!addressLine.trim()) newErrors.address = "Address is required";
     if (!city.trim()) newErrors.city = "City is required";
+
     if (!pincode.trim()) {
       newErrors.pincode = "Pincode is required";
-    } else if (pincode.length == 6) {
-      newErrors.pincode = "Pincode must be 6 chars";
+    } else if (!/^\d{6}$/.test(pincode)) {
+      newErrors.pincode = "Enter a valid 6-digit pincode";
     }
 
     if (!latitude.trim()) {

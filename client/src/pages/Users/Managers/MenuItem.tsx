@@ -1,4 +1,3 @@
-// src/pages/manager/MenuItem.tsx
 import { useEffect, useState } from "react";
 
 interface Category {
@@ -32,6 +31,13 @@ const MenuItemPage = () => {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [errors, setErrors] = useState<{
+    name?: string;
+    price?: string;
+    categoryId?: string;
+    description?: string;
+  }>({});
 
   const resetForm = () => {
     setName("");
@@ -82,10 +88,39 @@ const MenuItemPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !price || !categoryId) {
-      alert("Name, price and category are required");
+    const newErrors: {
+      name?: string;
+      price?: string;
+      categoryId?: string;
+      description?: string;
+    } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    if (!price) {
+      newErrors.price = "Price is required";
+    } else if (Number(price) <= 0) {
+      newErrors.price = "Price must be greater than 0";
+    }
+
+    if (!categoryId) {
+      newErrors.categoryId = "Category is required";
+    }
+
+    if (description && description.trim().length < 5) {
+      newErrors.description = "Description must be at least 5 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({});
 
     try {
       setSubmitting(true);
@@ -188,43 +223,52 @@ const MenuItemPage = () => {
           </h5>
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label">Name *</label>
+              <label className="form-label">Name</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.name ? "is-invalid" : ""}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={submitting}
               />
+              {errors.name && (
+                <small className="text-danger">{errors.name}</small>
+              )}
             </div>
 
             <div className="mb-3">
               <label className="form-label">Description</label>
               <textarea
-                className="form-control"
+                className={`form-control ${errors.description ? "is-invalid" : ""}`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={submitting}
               />
+              {errors.description && (
+                <small className="text-danger">{errors.description}</small>
+              )}
             </div>
 
             <div className="mb-3">
-              <label className="form-label">Price *</label>
+              <label className="form-label">Price</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                className="form-control"
+                className={`form-control ${errors.price ? "is-invalid" : ""}`}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 disabled={submitting}
               />
+              {errors.price && (
+                <small className="text-danger">{errors.price}</small>
+              )}
             </div>
 
             <div className="mb-3">
               <label className="form-label">Category *</label>
               <select
-                className="form-select"
+                className={`form-select ${errors.categoryId ? "is-invalid" : ""}`}
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 disabled={submitting}
@@ -236,6 +280,9 @@ const MenuItemPage = () => {
                   </option>
                 ))}
               </select>
+              {errors.categoryId && (
+                <small className="text-danger">{errors.categoryId}</small>
+              )}
             </div>
 
             <div className="mb-3 form-check">
@@ -346,7 +393,6 @@ const MenuItemPage = () => {
                   >
                     Edit
                   </button>
-                  {/* you can later add a delete endpoint and button here */}
                 </td>
               </tr>
             ))

@@ -140,14 +140,16 @@ const Navbar = () => {
 
                   {/* all the routes for driver */}
                   {role === "driver" && (
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        onClick={() => navigate("/driver/dashboard")}
-                      >
-                        Dashboard
-                      </a>
-                    </li>
+                    <>
+                      <li className="nav-item">
+                        <a
+                          className="nav-link"
+                          onClick={() => navigate("/driver/dashboard")}
+                        >
+                          Dashboard
+                        </a>
+                      </li>
+                    </>
                   )}
                 </>
               </ProtectedRoute>

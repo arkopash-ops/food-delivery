@@ -385,7 +385,7 @@ export const getMyOrders = async (customerId: Types.ObjectId) => {
         .populate("restaurantId", "name image address")
         .populate({
             path: "driverId",
-            select: "driverId",
+            select: "driverId currentLocation",
             populate: {
                 path: "driverId",
                 select: "name phone",

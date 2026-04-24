@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import LocationMap from "../../../components/LocationMap";
 
 interface Location {
   type: "Point";
@@ -27,6 +28,16 @@ interface RestaurantSummary {
   image?: string;
 }
 
+interface DriverSummary {
+  _id: string;
+  currentLocation?: Location | null;
+  driverId?: {
+    _id: string;
+    name: string;
+    phone?: string;
+  };
+}
+
 interface CustomerOrder {
   _id: string;
   status: string;
@@ -37,6 +48,7 @@ interface CustomerOrder {
   deliveryAddressSnapshot: DeliveryAddressSnapshot;
   createdAt: string;
   restaurantId: RestaurantSummary;
+  driverId?: DriverSummary | null;
 }
 
 const Orders = () => {
@@ -80,6 +92,11 @@ const Orders = () => {
 
   const activeOrder =
     orders.find((order) => order._id === activeOrderId) || null;
+  const showTrackingMap =
+    activeOrder?.status === "PICKED_UP" || activeOrder?.status === "ON_THE_WAY";
+  const driverCoordinates = activeOrder?.driverId?.currentLocation?.coordinates;
+  const driverLongitude = driverCoordinates?.[0];
+  const driverLatitude = driverCoordinates?.[1];
 
   return (
     <div className="container mt-4">
@@ -131,7 +148,8 @@ const Orders = () => {
                             <span
                               key={`${order._id}-${item.menuItemId}-${index}`}
                             >
-                              <strong>{item.name}</strong> x <strong>{item.quantity}</strong>
+                              <strong>{item.name}</strong> x{" "}
+                              <strong>{item.quantity}</strong>
                             </span>
                           ))}
                         </div>
@@ -169,6 +187,40 @@ const Orders = () => {
                         {activeOrder.status}
                       </span>
                     </div>
+
+                    {showTrackingMap && driverCoordinates && (
+                      <div className="mt-4">
+                        <h6>Driver and Customer Location</h6>
+                        <p className="text-muted small mb-2">
+                          Driver Latitude: {driverLatitude} | Driver Longitude:{" "}
+                          {driverLongitude}
+                        </p>
+                        <LocationMap
+                          latitude={String(driverLatitude)}
+                          longitude={String(driverLongitude)}
+                          height="280px"
+                          readOnly
+                          markers={[
+                            {
+                              latitude: String(driverLongitude),
+                              longitude: String(driverLatitude),
+                              label: "Driver location",
+                            },
+                            {
+                              latitude: String(
+                                activeOrder.deliveryAddressSnapshot.location
+                                  .coordinates[1],
+                              ),
+                              longitude: String(
+                                activeOrder.deliveryAddressSnapshot.location
+                                  .coordinates[0],
+                              ),
+                              label: "Customer address",
+                            },
+                          ]}
+                        />
+                      </div>
+                    )}
 
                     <div className="mb-4">
                       <h6>Items</h6>

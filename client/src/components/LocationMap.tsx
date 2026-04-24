@@ -1,6 +1,13 @@
 import L from "leaflet";
 import { useEffect } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 const defaultIcon = new L.Icon({
@@ -25,6 +32,11 @@ interface LocationMapProps {
   setLongitude?: (lng: string) => void;
   height?: string;
   readOnly?: boolean;
+  markers?: {
+    latitude: string;
+    longitude: string;
+    label?: string;
+  }[];
 }
 
 const MapClickHandler = ({
@@ -55,6 +67,22 @@ const RecenterMap = ({ center }: { center: [number, number] }) => {
   return null;
 };
 
+const FitBounds = ({ points }: { points: [number, number][] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      map.setView(points[0], 13);
+      return;
+    }
+
+    map.fitBounds(points, { padding: [40, 40] });
+  }, [map, points]);
+
+  return null;
+};
+
 const LocationMap = ({
   latitude,
   longitude,
@@ -62,6 +90,7 @@ const LocationMap = ({
   setLongitude,
   height = "300px",
   readOnly = false,
+  markers,
 }: LocationMapProps) => {
   const latNum = Number(latitude);
   const lngNum = Number(longitude);
@@ -76,6 +105,27 @@ const LocationMap = ({
     ? [latNum, lngNum]
     : DEFAULT_CENTER;
 
+  const parsedMarkers =
+    markers?.filter((marker) => {
+      const markerLat = Number(marker.latitude);
+      const markerLng = Number(marker.longitude);
+
+      return (
+        Number.isFinite(markerLat) &&
+        Number.isFinite(markerLng) &&
+        marker.latitude !== "" &&
+        marker.longitude !== ""
+      );
+    }) || [];
+
+  const mapPoints: [number, number][] =
+    parsedMarkers.length > 0
+      ? parsedMarkers.map((marker) => [
+          Number(marker.latitude),
+          Number(marker.longitude),
+        ])
+      : [center];
+
   return (
     <MapContainer
       center={center}
@@ -88,7 +138,11 @@ const LocationMap = ({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <RecenterMap center={center} />
+      {parsedMarkers.length > 0 ? (
+        <FitBounds points={mapPoints} />
+      ) : (
+        <RecenterMap center={center} />
+      )}
       {!readOnly && (
         <MapClickHandler
           setLatitude={setLatitude}
@@ -96,22 +150,33 @@ const LocationMap = ({
         />
       )}
 
-      <Marker
-        position={center}
-        draggable={!readOnly}
-        eventHandlers={
-          readOnly || !setLatitude || !setLongitude
-            ? undefined
-            : {
-                dragend: (e) => {
-                  const marker = e.target as L.Marker;
-                  const pos = marker.getLatLng();
-                  setLatitude(pos.lat.toString());
-                  setLongitude(pos.lng.toString());
-                },
-              }
-        }
-      />
+      {parsedMarkers.length > 0 ? (
+        parsedMarkers.map((marker) => (
+          <Marker
+            key={`${marker.latitude}-${marker.longitude}-${marker.label || "point"}`}
+            position={[Number(marker.latitude), Number(marker.longitude)]}
+          >
+            {marker.label ? <Popup>{marker.label}</Popup> : null}
+          </Marker>
+        ))
+      ) : (
+        <Marker
+          position={center}
+          draggable={!readOnly}
+          eventHandlers={
+            readOnly || !setLatitude || !setLongitude
+              ? undefined
+              : {
+                  dragend: (e) => {
+                    const marker = e.target as L.Marker;
+                    const pos = marker.getLatLng();
+                    setLatitude(pos.lat.toString());
+                    setLongitude(pos.lng.toString());
+                  },
+                }
+          }
+        />
+      )}
     </MapContainer>
   );
 };

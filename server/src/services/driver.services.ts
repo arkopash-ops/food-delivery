@@ -145,7 +145,13 @@ export const getMyAssignedOrder = async (driverUserId: Types.ObjectId) => {
 
     const order = await OrderModel.findOne({
         driverId: driver._id,
-        status: OrderStatus.ASSIGNED,
+        status: {
+            $in: [
+                OrderStatus.ASSIGNED,
+                OrderStatus.PICKED_UP,
+                OrderStatus.ON_THE_WAY,
+            ],
+        },
     })
         .populate("restaurantId", "name image address")
         .populate("customerId", "name email phone")

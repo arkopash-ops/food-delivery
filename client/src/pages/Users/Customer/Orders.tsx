@@ -60,7 +60,9 @@ const Orders = () => {
           throw new Error(data.message || "Failed to load orders");
         }
 
-        const nextOrders = (data.orders || []) as CustomerOrder[];
+        const nextOrders = ((data.orders || []) as CustomerOrder[]).filter(
+          (order) => order.status !== "DELIVERED",
+        );
         setOrders(nextOrders);
         setActiveOrderId(nextOrders[0]?._id ?? null);
       } catch (err) {
@@ -126,8 +128,10 @@ const Orders = () => {
                         </div>
                         <div className="d-flex flex-column gap-1">
                           {order.items.map((item, index) => (
-                            <span key={`${order._id}-${item.menuItemId}-${index}`}>
-                              {item.name}
+                            <span
+                              key={`${order._id}-${item.menuItemId}-${index}`}
+                            >
+                              <strong>{item.name}</strong> x <strong>{item.quantity}</strong>
                             </span>
                           ))}
                         </div>

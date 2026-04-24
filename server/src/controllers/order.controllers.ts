@@ -48,6 +48,39 @@ export const _getMyOrders = async (
 };
 
 
+// rate delivered order
+export const _updateOrderRatings = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = req.user as AuthUser;
+        const { orderId } = req.params;
+
+        if (!orderId || Array.isArray(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or missing orderId.",
+            });
+        }
+
+        const order = await orderService.updateOrderRatings(
+            user._id,
+            orderId,
+            req.body
+        );
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 // get PLACED orders for restaurant manager
 export const _getMyPlacedOrder = async (
     req: Request,

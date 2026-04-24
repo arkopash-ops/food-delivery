@@ -10,6 +10,7 @@ import Register from "../pages/Auth/Register";
 import CustomerHome from "../pages/Users/Customer/CustomerHome";
 import Address from "../pages/Users/Customer/Address";
 import Orders from "../pages/Users/Customer/Orders";
+import History from "../pages/Users/Customer/History";
 
 import ManagerDashboard from "../pages/Users/Manager/ManagerDashboard";
 import Restaurant from "../pages/Users/Manager/Resaturant";
@@ -93,6 +94,14 @@ const AppRouter = () => {
             element={
               <ProtectedRoute role="customer">
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer/history"
+            element={
+              <ProtectedRoute role="customer">
+                <History />
               </ProtectedRoute>
             }
           />

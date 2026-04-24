@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-type OrderStatus = "PLACED" | "ACCEPTED" | "REJECTED" | "READY";
+type OrderStatus = "PLACED" | "ACCEPTED" | "REJECTED";
 
 interface OrderItem {
   menuItemId: string;
@@ -37,7 +37,7 @@ interface ManagerOrder {
   customerId: CustomerSummary;
 }
 
-const tabs: OrderStatus[] = ["PLACED", "ACCEPTED", "REJECTED", "READY"];
+const tabs: OrderStatus[] = ["PLACED", "ACCEPTED", "REJECTED"];
 
 const actionConfig = {
   accept: {

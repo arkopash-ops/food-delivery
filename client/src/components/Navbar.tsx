@@ -62,6 +62,7 @@ const Navbar = () => {
             {isAuthenticated && (
               <ProtectedRoute>
                 <>
+                  {/* all the routes for restaurant_manager */}
                   {role === "restaurant_manager" && (
                     <>
                       <li className="nav-item">
@@ -99,6 +100,7 @@ const Navbar = () => {
                     </>
                   )}
 
+                  {/* all the routes for customer */}
                   {role === "customer" && (
                     <>
                       <li className="nav-item">
@@ -120,6 +122,14 @@ const Navbar = () => {
                       <li className="nav-item">
                         <a
                           className="nav-link"
+                          onClick={() => navigate("/customer/history")}
+                        >
+                          History
+                        </a>
+                      </li>
+                      <li className="nav-item">
+                        <a
+                          className="nav-link"
                           onClick={() => navigate("/customer/address")}
                         >
                           Address
@@ -128,6 +138,7 @@ const Navbar = () => {
                     </>
                   )}
 
+                  {/* all the routes for driver */}
                   {role === "driver" && (
                     <li className="nav-item">
                       <a
@@ -142,6 +153,7 @@ const Navbar = () => {
               </ProtectedRoute>
             )}
 
+            {/* guest routes */}
             {!isAuthenticated && (
               <>
                 <li className="nav-item">

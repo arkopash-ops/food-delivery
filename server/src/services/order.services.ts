@@ -17,6 +17,16 @@ export interface CreateOrderInput {
     items: CreateOrderItemInput[];
 }
 
+export interface UpdateOrderRatingValueInput {
+    rating: number;
+    comment?: string;
+}
+
+export interface UpdateOrderRatingsInput {
+    restaurantRating?: UpdateOrderRatingValueInput;
+    driverRating?: UpdateOrderRatingValueInput;
+}
+
 const restaurantOrderStatuses = [
     OrderStatus.PLACED,
     OrderStatus.ACCEPTED,
@@ -171,6 +181,30 @@ const updateRestaurantRejectionRate = async (restaurantId: Types.ObjectId) => {
     await RestaurantModel.findByIdAndUpdate(restaurantId, {
         $set: { rejectionRate },
     });
+};
+
+
+// normalizing rating data
+const ratingData = (
+    value: UpdateOrderRatingValueInput | undefined,
+    fieldName: string
+) => {
+    if (!value) {
+        return undefined;
+    }
+
+    if (!Number.isInteger(value.rating) || value.rating < 1 || value.rating > 5) {
+        const err = new Error(`${fieldName} rating must be an integer between 1 and 5`) as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const comment = typeof value.comment === "string" ? value.comment.trim() : "";
+
+    return {
+        rating: value.rating,
+        ...(comment ? { comment } : {}),
+    };
 };
 
 
@@ -349,6 +383,14 @@ export const createOrder = async (
 export const getMyOrders = async (customerId: Types.ObjectId) => {
     const orders = await OrderModel.find({ customerId })
         .populate("restaurantId", "name image address")
+        .populate({
+            path: "driverId",
+            select: "driverId",
+            populate: {
+                path: "driverId",
+                select: "name phone",
+            },
+        })
         .sort({ createdAt: -1 })
         .lean();
 
@@ -426,4 +468,75 @@ export const readyAcceptedOrder = async (
         OrderStatus.ACCEPTED,
         OrderStatus.READY
     );
+};
+
+
+// update Order ratings
+export const updateOrderRatings = async (
+    customerId: Types.ObjectId,
+    orderId: string,
+    data: UpdateOrderRatingsInput
+) => {
+    if (!Types.ObjectId.isValid(orderId)) {
+        const err = new Error("Valid orderId is required") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const restaurantRating = ratingData(
+        data.restaurantRating,
+        "Restaurant"
+    );
+    const driverRating = ratingData(data.driverRating, "Driver");
+
+    if (!restaurantRating && !driverRating) {
+        const err = new Error("At least one rating is required") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const order = await OrderModel.findOne({
+        _id: orderId,
+        customerId,
+    });
+
+    if (!order) {
+        const err = new Error("Order not found") as any;
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (order.status !== OrderStatus.DELIVERED) {
+        const err = new Error("Only delivered orders can be rated") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (restaurantRating) {
+        order.restaurantRating = restaurantRating;
+    }
+
+    if (driverRating) {
+        if (!order.driverId) {
+            const err = new Error("Driver rating is not available for this order") as any;
+            err.statusCode = 400;
+            throw err;
+        }
+
+        order.driverRating = driverRating;
+    }
+
+    await order.save();
+
+    await order.populate("restaurantId", "name image address");
+    await order.populate({
+        path: "driverId",
+        select: "driverId",
+        populate: {
+            path: "driverId",
+            select: "name phone",
+        },
+    });
+
+    return order;
 };

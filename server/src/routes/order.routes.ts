@@ -19,4 +19,11 @@ router.get(
     orderController._getMyOrders
 );
 
+router.patch(
+    "/:orderId/rating",
+    protect,
+    requireRole("customer"),
+    orderController._updateOrderRatings
+);
+
 export default router;

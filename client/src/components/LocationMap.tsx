@@ -21,17 +21,22 @@ const DEFAULT_CENTER: [number, number] = [21.170240, 72.831062];
 interface LocationMapProps {
   latitude: string;
   longitude: string;
-  setLatitude: (lat: string) => void;
-  setLongitude: (lng: string) => void;
+  setLatitude?: (lat: string) => void;
+  setLongitude?: (lng: string) => void;
   height?: string;
+  readOnly?: boolean;
 }
 
 const MapClickHandler = ({
   setLatitude,
   setLongitude,
-}: Pick<LocationMapProps, "setLatitude" | "setLongitude">) => {
+}: {
+  setLatitude?: (lat: string) => void;
+  setLongitude?: (lng: string) => void;
+}) => {
   useMapEvents({
     click(e) {
+      if (!setLatitude || !setLongitude) return;
       setLatitude(e.latlng.lat.toString());
       setLongitude(e.latlng.lng.toString());
     },
@@ -56,6 +61,7 @@ const LocationMap = ({
   setLatitude,
   setLongitude,
   height = "300px",
+  readOnly = false,
 }: LocationMapProps) => {
   const latNum = Number(latitude);
   const lngNum = Number(longitude);
@@ -83,22 +89,28 @@ const LocationMap = ({
       />
 
       <RecenterMap center={center} />
-      <MapClickHandler
-        setLatitude={setLatitude}
-        setLongitude={setLongitude}
-      />
+      {!readOnly && (
+        <MapClickHandler
+          setLatitude={setLatitude}
+          setLongitude={setLongitude}
+        />
+      )}
 
       <Marker
         position={center}
-        draggable
-        eventHandlers={{
-          dragend: (e) => {
-            const marker = e.target as L.Marker;
-            const pos = marker.getLatLng();
-            setLatitude(pos.lat.toString());
-            setLongitude(pos.lng.toString());
-          },
-        }}
+        draggable={!readOnly}
+        eventHandlers={
+          readOnly || !setLatitude || !setLongitude
+            ? undefined
+            : {
+                dragend: (e) => {
+                  const marker = e.target as L.Marker;
+                  const pos = marker.getLatLng();
+                  setLatitude(pos.lat.toString());
+                  setLongitude(pos.lng.toString());
+                },
+              }
+        }
       />
     </MapContainer>
   );

@@ -56,7 +56,9 @@ export const _getMyPlacedOrder = async (
 ) => {
     try {
         const user = req.user as AuthUser;
-        const orders = await orderService.getMyPlacedOrder(user._id);
+        const status =
+            typeof req.query.status === "string" ? req.query.status : undefined;
+        const orders = await orderService.getMyPlacedOrder(user._id, status);
 
         return res.status(200).json({
             success: true,

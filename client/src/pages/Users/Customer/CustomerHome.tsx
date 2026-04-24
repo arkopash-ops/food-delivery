@@ -200,6 +200,7 @@ const CustomerHome = () => {
 
       setCart([]);
       setOrderMessage("Order placed successfully.");
+      alert("Order placed successfully.");
       setSelectedAddressId("");
     } catch (error) {
       console.error(error);

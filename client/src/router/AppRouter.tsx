@@ -1,17 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "../components/Layout";
+
+import ProtectedRoute from "../components/ProtectedRoute";
+import GuestOnlyRoute from "../components/GuestOnlyRoute";
+
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
+
 import CustomerHome from "../pages/Users/Customer/CustomerHome";
 import Address from "../pages/Users/Customer/Address";
 import Orders from "../pages/Users/Customer/Orders";
+
+import ManagerDashboard from "../pages/Users/Manager/ManagerDashboard";
+import Restaurant from "../pages/Users/Manager/Resaturant";
+import Category from "../pages/Users/Manager/Category";
+import MenuItem from "../pages/Users/Manager/MenuItem";
+import Order from "../pages/Users/Manager/Order";
+
 import DriverDashboard from "../pages/Users/Driver/DriverDashboard";
-import ManagerDashboard from "../pages/Users/Managers/ManagerDashboard";
-import ProtectedRoute from "../components/ProtectedRoute";
-import Restaurant from "../pages/Users/Managers/Resaturant";
-import Category from "../pages/Users/Managers/Category";
-import MenuItem from "../pages/Users/Managers/MenuItem";
-import GuestOnlyRoute from "../components/GuestOnlyRoute";
 
 const AppRouter = () => {
   return (
@@ -61,6 +67,14 @@ const AppRouter = () => {
             element={
               <ProtectedRoute role="restaurant_manager">
                 <Category />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manager/orders"
+            element={
+              <ProtectedRoute role="restaurant_manager">
+                <Order />
               </ProtectedRoute>
             }
           />

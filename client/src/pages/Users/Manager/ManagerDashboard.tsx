@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 interface Location {
   type: "Point";
-  coordinates: [number, number]; // [lng, lat]
+  coordinates: [number, number];
 }
 
 interface Address {
@@ -38,9 +38,22 @@ interface MenuItem {
   isAvailable: boolean;
 }
 
+interface DashboardOrderItem {
+  menuItemId: string;
+  name: string;
+}
+
+interface DashboardOrder {
+  _id: string;
+  status: string;
+  items: DashboardOrderItem[];
+  createdAt: string;
+}
+
 const ManagerDashboard = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [placedOrders, setPlacedOrders] = useState<DashboardOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
@@ -52,8 +65,11 @@ const ManagerDashboard = () => {
         setLoading(true);
         setError(null);
 
-        const [restaurantRes, menuRes] = await Promise.all([
+        const [restaurantRes, orderRes, menuRes] = await Promise.all([
           fetch("http://localhost:8080/api/restaurant/me", {
+            credentials: "include",
+          }),
+          fetch("http://localhost:8080/api/restaurant/me/order", {
             credentials: "include",
           }),
           fetch("http://localhost:8080/api/menu/items/my", {
@@ -67,6 +83,12 @@ const ManagerDashboard = () => {
           return;
         }
 
+        if (!orderRes.ok) {
+          const data = await orderRes.json().catch(() => ({}));
+          setError(data.message || "Failed to load orders");
+          return;
+        }
+
         if (!menuRes.ok) {
           const data = await menuRes.json().catch(() => ({}));
           setError(data.message || "Failed to load menu items");
@@ -74,9 +96,11 @@ const ManagerDashboard = () => {
         }
 
         const restaurantData = await restaurantRes.json();
+        const orderData = await orderRes.json();
         const menuData = await menuRes.json();
 
         setRestaurant(restaurantData.restaurant);
+        setPlacedOrders(orderData.orders || []);
         setMenuItems(menuData.items || []);
       } catch (err) {
         console.error(err);
@@ -100,6 +124,10 @@ const ManagerDashboard = () => {
 
   const handleManageMenuClick = () => {
     navigate("/manager/menu-item");
+  };
+
+  const handleViewOrder = (orderId: string) => {
+    navigate(`/manager/orders?status=PLACED&orderId=${orderId}`);
   };
 
   const handleToggleOpen = async () => {
@@ -170,7 +198,7 @@ const ManagerDashboard = () => {
 
   return (
     <div className="container mt-4">
-      <h3>Restauran Dashboard</h3>
+      <h3>Restaurant Dashboard</h3>
       <div className="row mt-3 g-4 align-items-start">
         <div className="col-12 col-lg-4">
           <div className="card h-100">
@@ -241,6 +269,59 @@ const ManagerDashboard = () => {
         </div>
 
         <div className="col-12 col-lg-8">
+          <div className="card mb-4">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="card-title mb-0">Placed Orders</h4>
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => navigate("/manager/orders?status=PLACED")}
+                >
+                  View All Orders
+                </button>
+              </div>
+
+              {placedOrders.length === 0 ? (
+                <p className="text-muted mb-0">No placed orders right now.</p>
+              ) : (
+                <div className="row g-3">
+                  {placedOrders.map((order) => (
+                    <div className="col-12 col-md-6" key={order._id}>
+                      <button
+                        type="button"
+                        className="card w-100 h-100 text-start border-0 shadow-sm"
+                        onClick={() => handleViewOrder(order._id)}
+                      >
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h5 className="card-title mb-0">
+                              Order #{order._id.slice(-6)}
+                            </h5>
+                            <span className="badge text-bg-dark">
+                              {order.status}
+                            </span>
+                          </div>
+                          <p className="text-muted small mb-2">
+                            {new Date(order.createdAt).toLocaleString()}
+                          </p>
+                          <div className="d-flex flex-column gap-1">
+                            {order.items.map((item, index) => (
+                              <span
+                                key={`${order._id}-${item.menuItemId}-${index}`}
+                              >
+                                {item.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="card h-100">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -258,57 +339,62 @@ const ManagerDashboard = () => {
                   No menu items found for this restaurant.
                 </p>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-striped align-middle mb-0">
-                    <thead>
-                      <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {menuItems.map((item) => (
-                        <tr key={item._id}>
-                          <td>
-                            {item.image ? (
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                style={{
-                                  width: "56px",
-                                  height: "56px",
-                                  objectFit: "cover",
-                                  borderRadius: "8px",
-                                }}
-                              />
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td>
-                            <div>{item.name}</div>
-                            {item.description && (
-                              <small className="text-muted">
-                                {item.description}
-                              </small>
-                            )}
-                          </td>
-                          <td>
-                            {typeof item.category === "string"
-                              ? item.category
-                              : item.category?.name}
-                          </td>
-                          <td>Rs. {item.price}</td>
-                          <td>
-                            {item.isAvailable ? "Available" : "Unavailable"}
-                          </td>
+                <div
+                  className="d-flex flex-column gap-3 overflow-auto"
+                  style={{ height: "390px" }}
+                >
+                  <div className="table-responsive">
+                    <table className="table table-striped align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Image</th>
+                          <th>Name</th>
+                          <th>Category</th>
+                          <th>Price</th>
+                          <th>Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {menuItems.map((item) => (
+                          <tr key={item._id}>
+                            <td>
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  style={{
+                                    width: "56px",
+                                    height: "56px",
+                                    objectFit: "cover",
+                                    borderRadius: "8px",
+                                  }}
+                                />
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td>
+                              <div>{item.name}</div>
+                              {item.description && (
+                                <small className="text-muted">
+                                  {item.description}
+                                </small>
+                              )}
+                            </td>
+                            <td>
+                              {typeof item.category === "string"
+                                ? item.category
+                                : item.category?.name}
+                            </td>
+                            <td>Rs. {item.price}</td>
+                            <td>
+                              {item.isAvailable ? "Available" : "Unavailable"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

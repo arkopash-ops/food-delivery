@@ -15,6 +15,21 @@ export interface CreateOrderInput {
     items: CreateOrderItemInput[];
 }
 
+const restaurantOrderStatuses = [
+    OrderStatus.PLACED,
+    OrderStatus.ACCEPTED,
+    OrderStatus.REJECTED,
+    OrderStatus.READY,
+] as const;
+
+type RestaurantOrderStatus = (typeof restaurantOrderStatuses)[number];
+
+const isRestaurantOrderStatus = (
+    value: string
+): value is RestaurantOrderStatus => {
+    return restaurantOrderStatuses.includes(value as RestaurantOrderStatus);
+};
+
 
 // update the status of order
 const updateOrderStatusForRestaurant = async (
@@ -282,8 +297,15 @@ export const getMyOrders = async (customerId: Types.ObjectId) => {
 
 // get PLACED orders for the logged-in restaurant manager
 export const getMyPlacedOrder = async (
-    managerId: Types.ObjectId
+    managerId: Types.ObjectId,
+    status: string = OrderStatus.PLACED
 ) => {
+    if (!isRestaurantOrderStatus(status)) {
+        const err = new Error("Invalid order status") as any;
+        err.statusCode = 400;
+        throw err;
+    }
+
     const restaurant = await RestaurantModel.findOne({ managerId })
         .select("_id")
         .lean();
@@ -294,7 +316,7 @@ export const getMyPlacedOrder = async (
 
     const orders = await OrderModel.find({
         restaurantId: restaurant._id,
-        status: OrderStatus.PLACED,
+        status,
     })
         .populate("customerId", "name email phone")
         .sort({ createdAt: -1 })
